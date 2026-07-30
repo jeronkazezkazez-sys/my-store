@@ -1,6 +1,6 @@
 from flask import Flask, render_template_string
 
-app = Flask(_name_)
+app = Flask(__name__)
 
 # الصفحة الرئيسية للمتجر
 @app.route('/')
@@ -41,5 +41,5 @@ def home():
     """
     return render_template_string(html_content)
 
-if _name_ == '_main_':
+if __name__ == '_main_':
     app.run(host='0.0.0.0', port=5000)
