@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+<head>
+    <meta charset="UTF-8">
+    <title>متجر الحلول الذكية</title>
+</head>
+<body>
+    <h1>مرحباً بكم في المتجر</h1>
+    
+    <div class="products-grid">
+        {% for product in products %}
+        <div class="product-card">
+            <h3>{{ product.name }}</h3>
+            <p>{{ product.description }}</p>
+            <span class="price">{{ product.price }}</span>
+        </div>
+        {% else %}
+        <p>لا توجد منتجات معروضة حالياً، انتظروا الافتتاح القريب!</p>
+        {% endfor %}
+    </div>
+</body>
+</html>
