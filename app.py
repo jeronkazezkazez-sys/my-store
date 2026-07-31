@@ -1,45 +1,65 @@
-from flask import Flask, render_template_string
+from flask import Flask, render_template, request, redirect, url_for
+import sqlite3
 
 app = Flask(__name__)
+
+# دالة للاتصال بقاعدة البيانات
+def get_db_connection():
+    conn = sqlite3.connect('store.db')
+    conn.row_factory = sqlite3.Row
+    return conn
+
+# إنشاء جدول المنتجات تلقائياً
+def init_db():
+    conn = get_db_connection()
+    conn.execute('''
+        CREATE TABLE IF NOT EXISTS products (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            name TEXT NOT NULL,
+            price TEXT NOT NULL,
+            category TEXT NOT NULL,
+            description TEXT
+        )
+    ''')
+    conn.commit()
+    conn.close()
+
+init_db()
 
 # الصفحة الرئيسية للمتجر
 @app.route('/')
 def home():
-    html_content = """
-    <!DOCTYPE html>
-    <html lang="ar" dir="rtl">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Smart Solutions Store | متجر الحلول الذكية</title>
-        <style>
-            body { font-family: Arial, sans-serif; text-align: center; background-color: #f4f6f9; padding: 20px; }
-            header { background: #1a252f; color: white; padding: 20px; border-radius: 10px; }
-            .card { background: white; padding: 20px; margin: 15px auto; max-width: 400px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-            .btn { display: inline-block; padding: 10px 20px; color: white; background: #27ae60; text-decoration: none; border-radius: 5px; margin-top: 10px; }
-        </style>
-    </head>
-    <body>
-        <header>
-            <h1>💡 Smart Solutions Store</h1>
-            <p>متجر الحلول الذكية لصيانة الهواتف، السوفت وير، وقطع الغيار</p>
-        </header>
+    conn = get_db_connection()
+    products = conn.execute('SELECT * FROM products').fetchall()
+    conn.close()
+    return render_template('index.html', products=products)
 
-        <div class="card">
-            <h3>📱 خدمات السوفت وير والصيانة</h3>
-            <p>فك شفرات، تخطي حسابات، وتحديث أنظمة الهواتف بأحدث الأدوات.</p>
-        </div>
+# صفحة لوحة التحكم لإدارة المنتجات
+@app.route('/admin', methods=['GET', 'POST'])
+def admin():
+    if request.method == 'POST':
+        name = request.form['name']
+        price = request.form['price']
+        category = request.form['category']
+        description = request.form['description']
+        
+        conn = get_db_connection()
+        conn.execute('INSERT INTO products (name, price, category, description) VALUES (?, ?, ?, ?)',
+                     (name, price, category, description))
+        conn.commit()
+        conn.close()
+        return redirect(url_for('admin'))
+        
+    conn = get_db_connection()
+    products = conn.execute('SELECT * FROM products').fetchall()
+    conn.close()
+    return render_template('admin.html', products=products)
 
-        <div class="card">
-            <h3>🔋 قطع الغيار والإكسسوارات</h3>
-            <p>توفير أفضل قطع الغيار والإكسسوارات الأصلية.</p>
-        </div>
-
-        <a href="https://wa.me/" class="btn">تواصل معنا عبر الواتساب 💬</a>
-    </body>
-    </html>
-    """
-    return render_template_string(html_content)
-
-if __name__ == '_main_':
-    app.run(host='0.0.0.0', port=5000)
+# حذف منتج
+@app.route('/delete/<int:id>', methods=['POST'])
+def delete_product(id):
+    conn = get_db_connection()
+    conn.execute('DELETE FROM products WHERE id = ?', (id,))
+    conn.commit()
+    conn.close()
+    return redirect(url_for('admin')
