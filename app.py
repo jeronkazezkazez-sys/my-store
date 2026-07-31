@@ -62,4 +62,4 @@ def delete_product(id):
     conn.execute('DELETE FROM products WHERE id = ?', (id,))
     conn.commit()
     conn.close()
-    return redirect(url_for('admin')
+    return redirect(url_for('admin'))
