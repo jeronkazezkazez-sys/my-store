@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html dir="rtl" lang="ar">
+
+<head>
+    <meta charset="UTF-8">
+    <title>لوحة تحكم المتجر</title>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 20px;
+            background: #f4f6f8;
+        }
+
+        .form-box {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 500px;
+            margin-bottom: 20px;
+        }
+
+        input,
+        select,
+        textarea {
+            width: 100%;
+            margin-bottom: 10px;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: #0284c7;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        table {
+            width: 100%;
+            background: white;
+            border-collapse: collapse;
+        }
+
+        th,
+        td {
+            padding: 10px;
+            border: 1px solid #ddd;
+            text-align: right;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>لوحة إدارة المنتجات والأسعار</h1>
+
+    <div class="form-box">
+        <h3>إضافة منتج جديد</h3>
+        <form action="/admin" method="POST">
+            <input type="text" name="name" placeholder="اسم المنتج أو الخدمة" required>
+            <input type="text" name="price" placeholder="السعر (مثال: 50 د.ل)" required>
+            <select name="category">
+                <option value="سوفت وير">سوفت وير وصيانة</option>
+                <option value="قطع غيار">قطع غيار وإكسسوارات</option>
+            </select>
+            <textarea name="description" placeholder="وصف قصير للمنتج"></textarea>
+            <button type="submit">إضافة المنتج</button>
+        </form>
+    </div>
+
+    <h3>المنتجات الحالية</h3>
+    <table>
+        <tr>
+            <th>الاسم</th>
+            <th>السعر</th>
+            <th>الفئة</th>
+            <th>إجراء</th>
+        </tr>
+        {% for p in products %}
+        <tr>
+            <td>{{ p.name }}</td>
+            <td>{{ p.price }}</td>
+            <td>{{ p.category }}</td>
+            <td>
+                <form action="/delete/{{ p.id }}" method="POST" style="display:inline;">
+                    <button type="submit" style="background:red;">حذف</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+
+</html>
