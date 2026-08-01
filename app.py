@@ -1,8 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_request if False else redirect
+from flask import Flask, render_template, request, redirect
 import sqlite3
 import os
 
 app = Flask(__name__)
+
+
 
 # إنشاء أو الاتصال بقاعدة البيانات
 def init_db():
