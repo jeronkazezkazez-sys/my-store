@@ -4,8 +4,6 @@ import os
 
 app = Flask(__name__)
 
-
-
 # إنشاء أو الاتصال بقاعدة البيانات
 def init_db():
     conn = sqlite3.connect('store.db')
