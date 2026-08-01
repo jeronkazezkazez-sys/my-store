@@ -1,60 +1,166 @@
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>متجر الحلول الذكية</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; padding: 0; direction: rtl; }
-        header { background-color: #1a252f; color: white; text-align: center; padding: 25px 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        header h1 { margin: 0; font-size: 28px; }
-        .container { max-width: 1100px; margin: 30px auto; padding: 0 15px; }
-        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 25px; }
-        .product-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.2s; display: flex; flex-direction: column; }
-        .product-card:hover { transform: translateY(-5px); }
-        .product-image { width: 100%; height: 200px; object-fit: cover; background-color: #eee; }
-        .no-image { height: 200px; background: #e9ecef; display: flex; align-items: center; justify-content: center; color: #adb5bd; font-size: 14px; }
-        .product-details { padding: 18px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
-        .product-title { margin: 0 0 10px 0; font-size: 18px; color: #2c3e50; }
-        .product-desc { color: #6c757d; font-size: 14px; margin-bottom: 15px; line-height: 1.5; }
-        .product-footer { display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
-        .price { font-size: 18px; font-weight: bold; color: #28a745; }
-        .buy-btn { background-color: #007bff; color: white; text-decoration: none; padding: 8px 15px; border-radius: 6px; font-size: 14px; font-weight: bold; }
-        .buy-btn:hover { background-color: #0056b3; }
-        .empty-msg { text-align: center; color: #6c757d; font-size: 18px; grid-column: 1 / -1; margin-top: 40px; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 0;
+            direction: rtl;
+        }
+
+        header {
+            background-color: #1a252f;
+            color: white;
+            text-align: center;
+            padding: 25px 10px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        .container {
+            max-width: 1100px;
+            margin: 30px auto;
+            padding: 0 15px;
+        }
+
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+            gap: 25px;
+        }
+
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .product-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .product-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            background-color: #eee;
+        }
+
+        .no-image {
+            height: 200px;
+            background: #e9ecef;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #adb5bd;
+            font-size: 14px;
+        }
+
+        .product-details {
+            padding: 18px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .product-title {
+            margin: 0 0 10px 0;
+            font-size: 18px;
+            color: #2c3e50;
+        }
+
+        .product-desc {
+            color: #6c757d;
+            font-size: 14px;
+            margin-bottom: 15px;
+            line-height: 1.5;
+        }
+
+        .product-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: auto;
+        }
+
+        .price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #28a745;
+        }
+
+        .buy-btn {
+            background-color: #007bff;
+            color: white;
+            text-decoration: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: bold;
+        }
+
+        .buy-btn:hover {
+            background-color: #0056b3;
+        }
+
+        .empty-msg {
+            text-align: center;
+            color: #6c757d;
+            font-size: 18px;
+            grid-column: 1 / -1;
+            margin-top: 40px;
+        }
     </style>
 </head>
+
 <body>
 
-<header>
-    <h1>متجر الحلول الذكية 🛍️</h1>
-</header>
+    <header>
+        <h1>متجر الحلول الذكية 🛍️</h1>
+    </header>
 
-<div class="container">
-    <div class="products-grid">
-        {% for product in products %}
-        <div class="product-card">
-            {% if product.image %}
-            <img src="{{ product.image }}" class="product-image" alt="{{ product.name }}">
-            {% else %}
-            <div class="no-image">لا تتوفر صورة</div>
-            {% endif %}
-            
-            <div class="product-details">
-                <div>
-                    <h3 class="product-title">{{ product.name }}</h3>
-                    <p class="product-desc">{{ product.description }}</p>
-                </div>
-                <div class="product-footer">
-                    <span class="price">{{ product.price }}</span>
-                    <a href="https://wa.me/218000000000" class="buy-btn" target="_blank">اطلب الآن 📲</a>
+    <div class="container">
+        <div class="products-grid">
+            {% for product in products %}
+            <div class="product-card">
+                {% if product.image %}
+                <img src="{{ product.image }}" class="product-image" alt="{{ product.name }}">
+                {% else %}
+                <div class="no-image">لا تتوفر صورة</div>
+                {% endif %}
+
+                <div class="product-details">
+                    <div>
+                        <h3 class="product-title">{{ product.name }}</h3>
+                        <p class="product-desc">{{ product.description }}</p>
+                    </div>
+                    <div class="product-footer">
+                        <span class="price">{{ product.price }}</span>
+                        <a href="https://wa.me/218000000000" class="buy-btn" target="_blank">اطلب الآن 📲</a>
+                    </div>
                 </div>
             </div>
+            {% else %}
+            <p class="empty-msg">لا توجد منتجات معروضة حالياً، انتظروا الافتتاح القريب! 🚀</p>
+            {% endfor %}
         </div>
-        {% else %}
-        <p class="empty-msg">لا توجد منتجات معروضة حالياً، انتظروا الافتتاح القريب! 🚀</p>
-        {% endfor %}
     </div>
-</div>
 
 </body>
+
+</html>
