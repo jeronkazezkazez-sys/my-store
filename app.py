@@ -4,10 +4,10 @@ import os
 
 app = Flask(__name__)
 
-# إنشاء قاعدة البيانات مع التأكد من وجود كافة الأعمدة
 def init_db():
     conn = sqlite3.connect('store.db')
     cursor = conn.cursor()
+    # إنشاء الجدول بالتركيبة الجديدة الصحيحة
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -17,12 +17,24 @@ def init_db():
             image TEXT
         )
     ''')
+    
+    # إضافة الأعمدة إن كانت مفقودة من قواعد البيانات القديمة
+    try:
+        cursor.execute('ALTER TABLE products ADD COLUMN description TEXT')
+    except sqlite3.OperationalError:
+        pass
+        
+    try:
+        cursor.execute('ALTER TABLE products ADD COLUMN image TEXT')
+    except sqlite3.OperationalError:
+        pass
+
     conn.commit()
     conn.close()
 
+# تشغيل الفحص عند الإقلاع
 init_db()
 
-# الصفحة الرئيسية للزبائن
 @app.route('/')
 def index():
     try:
@@ -37,17 +49,15 @@ def index():
             products.append({
                 'id': row[0],
                 'name': row[1],
-                'description': row[2],
-                'price': row[3],
-                'image': row[4]
+                'description': row[2] if len(row) > 2 else '',
+                'price': row[3] if len(row) > 3 else '',
+                'image': row[4] if len(row) > 4 else ''
             })
         return render_template('index.html', products=products)
-    except Exception as e:
-        # إذا حدث أي خطأ يعيد إنشاء قاعدة البيانات ويعيد المحاولة
+    except Exception:
         init_db()
         return render_template('index.html', products=[])
 
-# صفحة لوحة التحكم للإدارة
 @app.route('/admin')
 def admin():
     try:
@@ -62,22 +72,21 @@ def admin():
             products.append({
                 'id': row[0],
                 'name': row[1],
-                'description': row[2],
-                'price': row[3],
-                'image': row[4]
+                'description': row[2] if len(row) > 2 else '',
+                'price': row[3] if len(row) > 3 else '',
+                'image': row[4] if len(row) > 4 else ''
             })
         return render_template('admin.html', products=products)
-    except Exception as e:
+    except Exception:
         init_db()
         return render_template('admin.html', products=[])
 
-# إضافة منتج جديد
 @app.route('/add', methods=['POST'])
 def add_product():
     name = request.form.get('name')
-    description = request.form.get('description')
+    description = request.form.get('description', '')
     price = request.form.get('price')
-    image = request.form.get('image')
+    image = request.form.get('image', '')
     
     if name and price:
         conn = sqlite3.connect('store.db')
@@ -89,7 +98,6 @@ def add_product():
         
     return redirect('/admin')
 
-# حذف منتج
 @app.route('/delete/<int:product_id>')
 def delete_product(product_id):
     conn = sqlite3.connect('store.db')
