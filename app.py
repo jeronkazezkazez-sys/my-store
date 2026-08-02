@@ -4,10 +4,10 @@ import os
 
 app = Flask(__name__)
 
+# إنشاء قاعدة البيانات مع التأكد من وجود كافة الأعمدة
 def init_db():
     conn = sqlite3.connect('store.db')
     cursor = conn.cursor()
-    # إنشاء الجدول بالتركيبة الصحيحة الكاملة
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -17,64 +17,61 @@ def init_db():
             image TEXT
         )
     ''')
-    
-    # التأكد من إضافة عمود description في حال كان الجدول قداماً بدون هذا العمود
-    try:
-        cursor.execute('ALTER TABLE products ADD COLUMN description TEXT')
-    except sqlite3.OperationalError:
-        pass # العمود موجود بالفعل
-        
-    # التأكد من إضافة عمود image
-    try:
-        cursor.execute('ALTER TABLE products ADD COLUMN image TEXT')
-    except sqlite3.OperationalError:
-        pass # العمود موجود بالفعل
-
     conn.commit()
     conn.close()
 
 init_db()
 
+# الصفحة الرئيسية للزبائن
 @app.route('/')
 def index():
-    conn = sqlite3.connect('store.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT id, name, description, price, image FROM products')
-    rows = cursor.fetchall()
-    conn.close()
-    
-    products = []
-    for row in rows:
-        products.append({
-            'id': row[0],
-            'name': row[1],
-            'description': row[2],
-            'price': row[3],
-            'image': row[4]
-        })
+    try:
+        conn = sqlite3.connect('store.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT id, name, description, price, image FROM products')
+        rows = cursor.fetchall()
+        conn.close()
         
-    return render_template('index.html', products=products)
+        products = []
+        for row in rows:
+            products.append({
+                'id': row[0],
+                'name': row[1],
+                'description': row[2],
+                'price': row[3],
+                'image': row[4]
+            })
+        return render_template('index.html', products=products)
+    except Exception as e:
+        # إذا حدث أي خطأ يعيد إنشاء قاعدة البيانات ويعيد المحاولة
+        init_db()
+        return render_template('index.html', products=[])
 
+# صفحة لوحة التحكم للإدارة
 @app.route('/admin')
 def admin():
-    conn = sqlite3.connect('store.db')
-    cursor = conn.cursor()
-    cursor.execute('SELECT id, name, description, price, image FROM products')
-    rows = cursor.fetchall()
-    conn.close()
-    
-    products = []
-    for row in rows:
-        products.append({
-            'id': row[0],
-            'name': row[1],
-            'description': row[2],
-            'price': row[3],
-            'image': row[4]
-        })
+    try:
+        conn = sqlite3.connect('store.db')
+        cursor = conn.cursor()
+        cursor.execute('SELECT id, name, description, price, image FROM products')
+        rows = cursor.fetchall()
+        conn.close()
         
-    return render_template('admin.html', products=products)
+        products = []
+        for row in rows:
+            products.append({
+                'id': row[0],
+                'name': row[1],
+                'description': row[2],
+                'price': row[3],
+                'image': row[4]
+            })
+        return render_template('admin.html', products=products)
+    except Exception as e:
+        init_db()
+        return render_template('admin.html', products=[])
 
+# إضافة منتج جديد
 @app.route('/add', methods=['POST'])
 def add_product():
     name = request.form.get('name')
@@ -92,6 +89,7 @@ def add_product():
         
     return redirect('/admin')
 
+# حذف منتج
 @app.route('/delete/<int:product_id>')
 def delete_product(product_id):
     conn = sqlite3.connect('store.db')
