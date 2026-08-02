@@ -4,10 +4,12 @@ import os
 
 app = Flask(__name__)
 
+# استخدام قاعدة بيانات جديدة بنسبة 100% لتجنب أي تعارض قديم
+DB_NAME = 'store_v2.db'
+
 def init_db():
-    conn = sqlite3.connect('store.db')
+    conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    # إنشاء الجدول بالتركيبة الجديدة الصحيحة
     cursor.execute('''
         CREATE TABLE IF NOT EXISTS products (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -17,69 +19,48 @@ def init_db():
             image TEXT
         )
     ''')
-    
-    # إضافة الأعمدة إن كانت مفقودة من قواعد البيانات القديمة
-    try:
-        cursor.execute('ALTER TABLE products ADD COLUMN description TEXT')
-    except sqlite3.OperationalError:
-        pass
-        
-    try:
-        cursor.execute('ALTER TABLE products ADD COLUMN image TEXT')
-    except sqlite3.OperationalError:
-        pass
-
     conn.commit()
     conn.close()
 
-# تشغيل الفحص عند الإقلاع
 init_db()
 
 @app.route('/')
 def index():
-    try:
-        conn = sqlite3.connect('store.db')
-        cursor = conn.cursor()
-        cursor.execute('SELECT id, name, description, price, image FROM products')
-        rows = cursor.fetchall()
-        conn.close()
-        
-        products = []
-        for row in rows:
-            products.append({
-                'id': row[0],
-                'name': row[1],
-                'description': row[2] if len(row) > 2 else '',
-                'price': row[3] if len(row) > 3 else '',
-                'image': row[4] if len(row) > 4 else ''
-            })
-        return render_template('index.html', products=products)
-    except Exception:
-        init_db()
-        return render_template('index.html', products=[])
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, name, description, price, image FROM products')
+    rows = cursor.fetchall()
+    conn.close()
+    
+    products = []
+    for row in rows:
+        products.append({
+            'id': row[0],
+            'name': row[1],
+            'description': row[2] if row[2] else '',
+            'price': row[3] if row[3] else '',
+            'image': row[4] if row[4] else ''
+        })
+    return render_template('index.html', products=products)
 
 @app.route('/admin')
 def admin():
-    try:
-        conn = sqlite3.connect('store.db')
-        cursor = conn.cursor()
-        cursor.execute('SELECT id, name, description, price, image FROM products')
-        rows = cursor.fetchall()
-        conn.close()
-        
-        products = []
-        for row in rows:
-            products.append({
-                'id': row[0],
-                'name': row[1],
-                'description': row[2] if len(row) > 2 else '',
-                'price': row[3] if len(row) > 3 else '',
-                'image': row[4] if len(row) > 4 else ''
-            })
-        return render_template('admin.html', products=products)
-    except Exception:
-        init_db()
-        return render_template('admin.html', products=[])
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute('SELECT id, name, description, price, image FROM products')
+    rows = cursor.fetchall()
+    conn.close()
+    
+    products = []
+    for row in rows:
+        products.append({
+            'id': row[0],
+            'name': row[1],
+            'description': row[2] if row[2] else '',
+            'price': row[3] if row[3] else '',
+            'image': row[4] if row[4] else ''
+        })
+    return render_template('admin.html', products=products)
 
 @app.route('/add', methods=['POST'])
 def add_product():
@@ -89,7 +70,7 @@ def add_product():
     image = request.form.get('image', '')
     
     if name and price:
-        conn = sqlite3.connect('store.db')
+        conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
         cursor.execute('INSERT INTO products (name, description, price, image) VALUES (?, ?, ?, ?)',
                        (name, description, price, image))
@@ -100,7 +81,7 @@ def add_product():
 
 @app.route('/delete/<int:product_id>')
 def delete_product(product_id):
-    conn = sqlite3.connect('store.db')
+    conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
     cursor.execute('DELETE FROM products WHERE id = ?', (product_id,))
     conn.commit()
