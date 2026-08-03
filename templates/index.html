@@ -11,13 +11,15 @@
         .products-grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; max-width: 1200px; margin: 0 auto; }
         .card { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); width: 280px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s; }
         .card:hover { transform: translateY(-5px); }
-        .card img { width: 100%; height: 200px; object-fit: cover; cursor: pointer; }
+        /* جعل الصورة قابلة للنقر وتوضيح ذلك للزبون */
+        .card img { width: 100%; height: 200px; object-fit: cover; cursor: pointer; transition: opacity 0.2s; }
+        .card img:hover { opacity: 0.9; }
         .card-body { padding: 15px; text-align: right; }
         .title { font-size: 18px; font-weight: bold; margin-bottom: 8px; color: #222; }
-        .desc { font-size: 14px; color: #666; margin-bottom: 12px; min-height: 40px; }
+        .desc { font-size: 14px; color: #666; margin-bottom: 12px; min-height: 40px; line-height: 1.4; }
         .price { font-size: 20px; font-weight: bold; color: #28a745; margin-bottom: 15px; }
-        .btn-order { display: block; background-color: #0084ff; color: white; text-align: center; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold; transition: background 0.3s; }
-        .btn-order:hover { background-color: #0066cc; }
+        .btn-order { display: block; background-color: #25D366; color: white; text-align: center; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold; transition: background 0.3s; }
+        .btn-order:hover { background-color: #1ebc57; }
     </style>
 </head>
 <body>
@@ -29,16 +31,17 @@
 <div class="products-grid">
     {% for product in products %}
     <div class="card">
-        <!-- الصورة قابلة للنقر للطلب عبر الواتساب مباشرة -->
-        <a href="https://wa.me/218916092788?text=مرحباً،%20أريد%20طلب%20منتج:%20{{ product.name }}%20بسعر:%20{{ product.price }}" target="_blank">
+        <!-- عند الضغط على الصورة تفتح الصورة المباشرة بملء الشاشة لاستعراضها براحة -->
+        <a href="{{ product.image }}" target="_blank" title="اضغط لرؤية الصورة بالحجم الكامل">
             <img src="{{ product.image if product.image else 'https://via.placeholder.com/280x200?text=No+Image' }}" alt="{{ product.name }}">
         </a>
+        
         <div class="card-body">
             <div class="title">{{ product.name }}</div>
             <div class="desc">{{ product.description }}</div>
             <div class="price">{{ product.price }}</div>
             
-            <!-- زر الطلب عبر الواتساب -->
+            <!-- زر الطلب المباشر عبر الواتساب -->
             <a href="https://wa.me/218916092788?text=مرحباً،%20أريد%20طلب%20منتج:%20{{ product.name }}%20بسعر:%20{{ product.price }}" target="_blank" class="btn-order">
                 📲 اطلب الآن
             </a>
