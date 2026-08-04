@@ -4,66 +4,109 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>متجر الحلول الذكية</title>
+    <!-- استدعاء خط أنيق ومودرن -->
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; padding: 20px; direction: rtl; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .header h1 { color: #333; margin: 0; font-size: 28px; }
-        .products-grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; max-width: 1200px; margin: 0 auto; }
-        .card { background: white; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); width: 280px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s; position: relative; }
-        .card:hover { transform: translateY(-5px); }
-        .card img { width: 100%; height: 200px; object-fit: cover; cursor: pointer; transition: opacity 0.2s; }
-        .card img:hover { opacity: 0.9; }
-        .card-body { padding: 15px; text-align: right; }
-        .title { font-size: 18px; font-weight: bold; margin-bottom: 8px; color: #222; }
-        .desc { font-size: 14px; color: #666; margin-bottom: 12px; min-height: 40px; line-height: 1.4; }
-        .price { font-size: 20px; font-weight: bold; color: #28a745; margin-bottom: 15px; }
-        .btn-order { display: block; background-color: #25D366; color: white; text-align: center; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold; transition: background 0.3s; }
-        .btn-order:hover { background-color: #1ebc57; }
-        .btn-disabled { display: block; background-color: #6c757d; color: white; text-align: center; padding: 10px; border-radius: 6px; font-weight: bold; cursor: not-allowed; text-decoration: none; }
-        .badge-out { position: absolute; top: 10px; right: 10px; background: rgba(220, 53, 69, 0.9); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        * { box-sizing: border-box; font-family: 'Tajawal', sans-serif; }
+        body { background-color: #f4f6f9; margin: 0; padding: 0; direction: rtl; color: #333; }
         
-        /* تصميم النافذة المنبثقة لرؤية الصورة داخل الموقع دون الخروج منه */
-        .modal { display: none; position: fixed; z-index: 1000; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
-        .modal-content { max-width: 90%; max-height: 85%; border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,0.5); }
-        .close-btn { position: absolute; top: 20px; right: 30px; color: white; font-size: 35px; font-weight: bold; cursor: pointer; }
+        /* الهيدر الأنيق */
+        .navbar { background: linear-gradient(135deg, #1e293b, #0f172a); color: white; padding: 15px 20px; text-align: center; box-shadow: 0 4px 10px rgba(0,0,0,0.15); }
+        .navbar h1 { margin: 0; font-size: 24px; font-weight: 700; letter-spacing: 0.5px; }
+        .navbar p { margin: 5px 0 0 0; font-size: 13px; color: #94a3b8; }
+
+        .container { padding: 25px 15px; max-width: 1200px; margin: 0 auto; }
+        .products-grid { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+        
+        /* تصميم الكارت المحسن */
+        .card { background: white; border-radius: 16px; box-shadow: 0 6px 15px rgba(0,0,0,0.05); width: 280px; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.3s ease; position: relative; border: 1px solid #e2e8f0; }
+        .card:hover { transform: translateY(-6px); box-shadow: 0 12px 20px rgba(0,0,0,0.1); }
+        
+        .img-container { width: 100%; height: 210px; overflow: hidden; position: relative; background: #e2e8f0; }
+        .card img { width: 100%; height: 100%; object-fit: cover; cursor: pointer; transition: transform 0.4s ease; }
+        .card img:hover { transform: scale(1.05); }
+        
+        .card-body { padding: 15px; text-align: right; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .title { font-size: 17px; font-weight: 700; margin-bottom: 6px; color: #0f172a; }
+        .desc { font-size: 13px; color: #64748b; margin-bottom: 12px; min-height: 38px; line-height: 1.5; }
+        .price-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .price { font-size: 20px; font-weight: 700; color: #16a34a; }
+        
+        /* الأزرار */
+        .btn-order { display: flex; align-items: center; justify-content: center; gap: 8px; background-color: #25D366; color: white; text-align: center; padding: 10px; border-radius: 10px; text-decoration: none; font-weight: 700; transition: background 0.3s; }
+        .btn-order:hover { background-color: #1ebc57; }
+        .btn-disabled { display: block; background-color: #94a3b8; color: white; text-align: center; padding: 10px; border-radius: 10px; font-weight: 700; cursor: not-allowed; text-decoration: none; }
+        .badge-out { position: absolute; top: 10px; right: 10px; background: rgba(225, 29, 72, 0.9); color: white; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 700; z-index: 2; }
+        
+        /* النافذة المنبثقة للصورة */
+        .modal { display: none; position: fixed; z-index: 1000; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; backdrop-filter: blur(4px); }
+        .modal-content { max-width: 90%; max-height: 80%; border-radius: 12px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .close-btn { position: absolute; top: 20px; right: 25px; color: white; font-size: 32px; font-weight: bold; cursor: pointer; background: rgba(255,255,255,0.2); width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+        /* زر الواتساب العائم للتواصل المباشر */
+        .float-wa { position: fixed; bottom: 20px; left: 20px; background-color: #25D366; color: white; width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(0,0,0,0.3); text-decoration: none; font-size: 26px; z-index: 99; transition: transform 0.3s; }
+        .float-wa:hover { transform: scale(1.1); }
+        
+        footer { text-align: center; padding: 20px; font-size: 13px; color: #94a3b8; margin-top: 40px; }
     </style>
 </head>
 <body>
 
-<div class="header">
+<div class="navbar">
     <h1>🛍️ متجر الحلول الذكية</h1>
+    <p>أفضل المنتجات والخدمات الإلكترونية بين يديك</p>
 </div>
 
-<div class="products-grid">
-    {% for product in products %}
-    <div class="card">
-        {% if product.is_available == 0 %}
-            <div class="badge-out">نفدت الكمية ❌</div>
-        {% endif %}
-        
-        <!-- عند الضغط تفتح الصورة كـ Modal داخل نفس الصفحة بدون مغادرة المتجر -->
-        <img src="{{ product.image if product.image else 'https://via.placeholder.com/280x200?text=No+Image' }}" 
-             alt="{{ product.name }}" 
-             onclick="openImageModal(this.src)">
-        
-        <div class="card-body">
-            <div class="title">{{ product.name }}</div>
-            <div class="desc">{{ product.description }}</div>
-            <div class="price">{{ product.price }}</div>
-            
-            {% if product.is_available == 1 %}
-                <a href="https://wa.me/218916092788?text=مرحباً،%20أريد%20طلب%20منتج:%20{{ product.name }}%20بسعر:%20{{ product.price }}" target="_blank" class="btn-order">
-                    📲 اطلب الآن
-                </a>
-            {% else %}
-                <span class="btn-disabled">نفدت الكمية ❌</span>
+<div class="container">
+    <div class="products-grid">
+        {% for product in products %}
+        <div class="card">
+            {% if product.is_available == 0 %}
+                <div class="badge-out">نفدت الكمية ❌</div>
             {% endif %}
+            
+            <div class="img-container">
+                <img src="{{ product.image if product.image else 'https://via.placeholder.com/280x200?text=No+Image' }}" 
+                     alt="{{ product.name }}" 
+                     onclick="openImageModal(this.src)">
+            </div>
+            
+            <div class="card-body">
+                <div>
+                    <div class="title">{{ product.name }}</div>
+                    <div class="desc">{{ product.description }}</div>
+                </div>
+                
+                <div>
+                    <div class="price-row">
+                        <span style="font-size: 12px; color: #64748b;">السعر:</span>
+                        <span class="price">{{ product.price }}</span>
+                    </div>
+                    
+                    {% if product.is_available == 1 %}
+                        <a href="https://wa.me/2189XXXXXXX?text=مرحباً،%20أريد%20طلب%20منتج:%20{{ product.name }}%20بسعر:%20{{ product.price }}" target="_blank" class="btn-order">
+                            📲 اطلب الآن
+                        </a>
+                    {% else %}
+                        <span class="btn-disabled">نفدت الكمية ❌</span>
+                    {% endif %}
+                </div>
+            </div>
         </div>
+        {% else %}
+        <p style="text-align: center; color: #64748b;">لا توجد منتجات معروضة حالياً.</p>
+        {% endfor %}
     </div>
-    {% else %}
-    <p>لا توجد منتجات معروضة حالياً.</p>
-    {% endfor %}
 </div>
+
+<!-- زر واتساب عائم للاستفسارات العامة -->
+<a href="https://wa.me/218916092788?text=مرحباً،%20لدي%20استفسار%20عام" class="float-wa" target="_blank" title="تواصل معنا عبر الواتساب">
+    💬
+</a>
+
+<footer>
+    <p>© متجر الحلول الذكية - جميع الحقوق محفوظة</p>
+</footer>
 
 <!-- النافذة المنبثقة لعرض الصور -->
 <div id="imageModal" class="modal" onclick="closeImageModal()">
