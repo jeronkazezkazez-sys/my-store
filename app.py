@@ -4,7 +4,6 @@ import os
 
 app = Flask(__name__)
 
-# استخدام قاعدة بيانات جديدة بنسبة 100% لتجنب أي تعارض قديم
 DB_NAME = 'store_v2.db'
 
 def init_db():
@@ -16,9 +15,16 @@ def init_db():
             name TEXT NOT NULL,
             description TEXT,
             price TEXT NOT NULL,
-            image TEXT
+            image TEXT,
+            is_available INTEGER DEFAULT 1
         )
     ''')
+    # إضافة عمود is_available إن لم يكن موجوداً
+    try:
+        cursor.execute('ALTER TABLE products ADD COLUMN is_available INTEGER DEFAULT 1')
+    except sqlite3.OperationalError:
+        pass
+        
     conn.commit()
     conn.close()
 
@@ -28,7 +34,7 @@ init_db()
 def index():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    cursor.execute('SELECT id, name, description, price, image FROM products')
+    cursor.execute('SELECT id, name, description, price, image, is_available FROM products')
     rows = cursor.fetchall()
     conn.close()
     
@@ -39,7 +45,8 @@ def index():
             'name': row[1],
             'description': row[2] if row[2] else '',
             'price': row[3] if row[3] else '',
-            'image': row[4] if row[4] else ''
+            'image': row[4] if row[4] else '',
+            'is_available': row[5] if len(row) > 5 and row[5] is not None else 1
         })
     return render_template('index.html', products=products)
 
@@ -47,7 +54,7 @@ def index():
 def admin():
     conn = sqlite3.connect(DB_NAME)
     cursor = conn.cursor()
-    cursor.execute('SELECT id, name, description, price, image FROM products')
+    cursor.execute('SELECT id, name, description, price, image, is_available FROM products')
     rows = cursor.fetchall()
     conn.close()
     
@@ -58,7 +65,8 @@ def admin():
             'name': row[1],
             'description': row[2] if row[2] else '',
             'price': row[3] if row[3] else '',
-            'image': row[4] if row[4] else ''
+            'image': row[4] if row[4] else '',
+            'is_available': row[5] if len(row) > 5 and row[5] is not None else 1
         })
     return render_template('admin.html', products=products)
 
@@ -72,11 +80,20 @@ def add_product():
     if name and price:
         conn = sqlite3.connect(DB_NAME)
         cursor = conn.cursor()
-        cursor.execute('INSERT INTO products (name, description, price, image) VALUES (?, ?, ?, ?)',
+        cursor.execute('INSERT INTO products (name, description, price, image, is_available) VALUES (?, ?, ?, ?, 1)',
                        (name, description, price, image))
         conn.commit()
         conn.close()
         
+    return redirect('/admin')
+
+@app.route('/toggle/<int:product_id>')
+def toggle_product(product_id):
+    conn = sqlite3.connect(DB_NAME)
+    cursor = conn.cursor()
+    cursor.execute('UPDATE products SET is_available = CASE WHEN is_available = 1 THEN 0 ELSE 1 END WHERE id = ?', (product_id,))
+    conn.commit()
+    conn.close()
     return redirect('/admin')
 
 @app.route('/delete/<int:product_id>')
@@ -86,7 +103,6 @@ def delete_product(product_id):
     cursor.execute('DELETE FROM products WHERE id = ?', (product_id,))
     conn.commit()
     conn.close()
-    
     return redirect('/admin')
 
 if __name__ == '__main__':
