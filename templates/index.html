@@ -19,10 +19,13 @@
         .price { font-size: 20px; font-weight: bold; color: #28a745; margin-bottom: 15px; }
         .btn-order { display: block; background-color: #25D366; color: white; text-align: center; padding: 10px; border-radius: 6px; text-decoration: none; font-weight: bold; transition: background 0.3s; }
         .btn-order:hover { background-color: #1ebc57; }
-        
-        /* تصميم زر نفدت الكمية */
         .btn-disabled { display: block; background-color: #6c757d; color: white; text-align: center; padding: 10px; border-radius: 6px; font-weight: bold; cursor: not-allowed; text-decoration: none; }
         .badge-out { position: absolute; top: 10px; right: 10px; background: rgba(220, 53, 69, 0.9); color: white; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        
+        /* تصميم النافذة المنبثقة لرؤية الصورة داخل الموقع دون الخروج منه */
+        .modal { display: none; position: fixed; z-index: 1000; top: 0; left: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
+        .modal-content { max-width: 90%; max-height: 85%; border-radius: 8px; box-shadow: 0 5px 25px rgba(0,0,0,0.5); }
+        .close-btn { position: absolute; top: 20px; right: 30px; color: white; font-size: 35px; font-weight: bold; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -38,9 +41,10 @@
             <div class="badge-out">نفدت الكمية ❌</div>
         {% endif %}
         
-        <a href="{{ product.image }}" target="_blank" title="اضغط لرؤية الصورة بالحجم الكامل">
-            <img src="{{ product.image if product.image else 'https://via.placeholder.com/280x200?text=No+Image' }}" alt="{{ product.name }}">
-        </a>
+        <!-- عند الضغط تفتح الصورة كـ Modal داخل نفس الصفحة بدون مغادرة المتجر -->
+        <img src="{{ product.image if product.image else 'https://via.placeholder.com/280x200?text=No+Image' }}" 
+             alt="{{ product.name }}" 
+             onclick="openImageModal(this.src)">
         
         <div class="card-body">
             <div class="title">{{ product.name }}</div>
@@ -60,6 +64,22 @@
     <p>لا توجد منتجات معروضة حالياً.</p>
     {% endfor %}
 </div>
+
+<!-- النافذة المنبثقة لعرض الصور -->
+<div id="imageModal" class="modal" onclick="closeImageModal()">
+    <span class="close-btn" onclick="closeImageModal()">&times;</span>
+    <img class="modal-content" id="imgFull">
+</div>
+
+<script>
+    function openImageModal(src) {
+        document.getElementById("imgFull").src = src;
+        document.getElementById("imageModal").style.display = "flex";
+    }
+    function closeImageModal() {
+        document.getElementById("imageModal").style.display = "none";
+    }
+</script>
 
 </body>
 </html>
