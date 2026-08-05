@@ -1,6 +1,7 @@
 import os
 from flask import Flask, render_template_string, request, redirect, url_for
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import text
 
 app = Flask(__name__)
 
@@ -25,10 +26,17 @@ class Product(db.Model):
     image_url = db.Column(db.String(500), nullable=True)
     is_available = db.Column(db.Boolean, default=True)
 
+# 4️⃣ إنشاء الجداول وإضافة العمود الجديد تلقائياً إذا كان مفقوداً
 with app.app_context():
     db.create_all()
+    try:
+        # إضافة العمود الجديد لقاعدة البيانات الحالية في حال لم يكن موجوداً
+        db.session.execute(text("ALTER TABLE product ADD COLUMN IF NOT EXISTS is_available BOOLEAN DEFAULT TRUE;"))
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
 
-# 4️⃣ تصميم الواجهة المحدث
+# 5️⃣ تصميم الواجهة المحدث
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -43,7 +51,6 @@ HTML_TEMPLATE = """
         .header h1 { color: #1a252f; margin-bottom: 5px; font-size: 1.8em; }
         .back-link { display: inline-block; margin: 10px 0; padding: 10px 20px; background: #3498db; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
         
-        /* المتجر العام */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
         .card { background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s; position: relative; }
         .card:hover { transform: translateY(-5px); }
@@ -57,12 +64,10 @@ HTML_TEMPLATE = """
         .out-of-stock-btn { display: block; text-align: center; background: #95a5a6; color: white; padding: 12px; border-radius: 5px; font-weight: bold; font-size: 1em; cursor: not-allowed; }
         .badge-out { position: absolute; top: 10px; right: 10px; background: #e74c3c; color: white; padding: 5px 10px; border-radius: 5px; font-size: 0.8em; font-weight: bold; }
 
-        /* نافذة المعاينة */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
         .modal-content { max-width: 90%; max-height: 85%; border-radius: 8px; }
         .close-btn { position: absolute; top: 20px; right: 35px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; }
 
-        /* لوحة التحكم */
         .form-container { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 30px; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
@@ -70,7 +75,6 @@ HTML_TEMPLATE = """
         .submit-btn { background: #27ae60; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 1em; font-weight: bold; }
         .cancel-btn { display: inline-block; background: #7f8c8d; color: white; text-decoration: none; padding: 10px 15px; border-radius: 5px; margin-top: 10px; }
         
-        /* جدول إدارة المنتجات */
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
         th, td { padding: 12px 15px; text-align: right; border-bottom: 1px solid #ddd; }
         th { background-color: #34495e; color: white; }
@@ -90,7 +94,6 @@ HTML_TEMPLATE = """
         </div>
 
         {% if is_admin %}
-            <!-- نموذج إضافة أو تعديل منتج -->
             <div class="form-container">
                 <h2>{% if edit_product %}تعديل بيانات المنتج{% else %}إضافة منتج جديد{% endif %}</h2>
                 <form action="{% if edit_product %}/admin/edit/{{ edit_product.id }}{% else %}/admin{% endif %}" method="POST">
@@ -120,7 +123,6 @@ HTML_TEMPLATE = """
                 </form>
             </div>
 
-            <!-- جدول إدارة المنتجات -->
             <h2>قائمة المنتجات المضافة</h2>
             {% if products %}
                 <table>
@@ -157,7 +159,6 @@ HTML_TEMPLATE = """
             {% endif %}
 
         {% else %}
-            <!-- الواجهة العامة للزبائن -->
             {% if products %}
                 <div class="grid">
                     {% for p in products %}
@@ -204,13 +205,13 @@ HTML_TEMPLATE = """
 </html>
 """
 
-# 5️⃣ الرابط العام للمتجر
+# 6️⃣ الرابط العام للمتجر
 @app.route('/')
 def home():
     products = Product.query.all()
     return render_template_string(HTML_TEMPLATE, products=products, is_admin=False, phone=PHONE_NUMBER)
 
-# 6️⃣ لوحة التحكم واضافة منتج
+# 7️⃣ لوحة التحكم واضافة منتج
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     if request.method == 'POST':
@@ -227,7 +228,7 @@ def admin():
     products = Product.query.all()
     return render_template_string(HTML_TEMPLATE, products=products, is_admin=True, edit_product=None, phone=PHONE_NUMBER)
 
-# 7️⃣ تعديل منتج
+# 8️⃣ تعديل منتج
 @app.route('/admin/edit/<int:product_id>', methods=['GET', 'POST'])
 def edit_product(product_id):
     product = Product.query.get_or_404(product_id)
@@ -242,7 +243,7 @@ def edit_product(product_id):
     products = Product.query.all()
     return render_template_string(HTML_TEMPLATE, products=products, is_admin=True, edit_product=product, phone=PHONE_NUMBER)
 
-# 8️⃣ حذف منتج
+# 9️⃣ حذف منتج
 @app.route('/admin/delete/<int:product_id>')
 def delete_product(product_id):
     product = Product.query.get_or_404(product_id)
