@@ -1,61 +1,410 @@
 <!DOCTYPE html>
-<html dir="rtl" lang="ar">
+<html dir="rtl" lang="ar" id="htmlTag">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>متجر الحلول الذكية</title>
+    <title id="pageTitle">متجر الحلول الذكية | Smart Solutions Store</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; margin: 0; padding: 0; direction: rtl; }
-        header { background-color: #1a252f; color: white; text-align: center; padding: 25px 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        header h1 { margin: 0; font-size: 28px; }
-        .container { max-width: 1100px; margin: 30px auto; padding: 0 15px; }
-        .products-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 25px; }
-        .product-card { background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); transition: transform 0.2s; display: flex; flex-direction: column; }
-        .product-card:hover { transform: translateY(-5px); }
-        .product-image { width: 100%; height: 200px; object-fit: cover; background-color: #eee; }
-        .no-image { height: 200px; background: #e9ecef; display: flex; align-items: center; justify-content: center; color: #adb5bd; font-size: 14px; }
-        .product-details { padding: 18px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
-        .product-title { margin: 0 0 10px 0; font-size: 18px; color: #2c3e50; }
-        .product-desc { color: #6c757d; font-size: 14px; margin-bottom: 15px; line-height: 1.5; }
-        .product-footer { display: flex; justify-content: space-between; align-items: center; margin-top: auto; }
-        .price { font-size: 18px; font-weight: bold; color: #28a745; }
-        .buy-btn { background-color: #007bff; color: white; text-decoration: none; padding: 8px 15px; border-radius: 6px; font-size: 14px; font-weight: bold; }
-        .buy-btn:hover { background-color: #0056b3; }
-        .empty-msg { text-align: center; color: #6c757d; font-size: 18px; grid-column: 1 / -1; margin-top: 40px; }
+        * {
+            box-sizing: border-box;
+            font-family: 'Tajawal', sans-serif;
+        }
+
+        body {
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        /* الهيدر الأنيق وزر اللغات */
+        .navbar {
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            color: white;
+            padding: 15px 20px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+            position: relative;
+        }
+
+        .navbar h1 {
+            margin: 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .navbar p {
+            margin: 5px 0 10px 0;
+            font-size: 13px;
+            color: #94a3b8;
+        }
+
+        /* محول اللغات */
+        .lang-switch {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-top: 8px;
+        }
+
+        .lang-btn {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .lang-btn:hover,
+        .lang-btn.active {
+            background: #25D366;
+            border-color: #25D366;
+            font-weight: bold;
+        }
+
+        .container {
+            padding: 25px 15px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .products-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            justify-content: center;
+        }
+
+        .card {
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.05);
+            width: 280px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: all 0.3s ease;
+            position: relative;
+            border: 1px solid #e2e8f0;
+        }
+
+        .card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 12px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .img-container {
+            width: 100%;
+            height: 210px;
+            overflow: hidden;
+            position: relative;
+            background: #e2e8f0;
+        }
+
+        .card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.4s ease;
+        }
+
+        .card img:hover {
+            transform: scale(1.05);
+        }
+
+        .card-body {
+            padding: 15px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+
+        .title {
+            font-size: 17px;
+            font-weight: 700;
+            margin-bottom: 6px;
+            color: #0f172a;
+        }
+
+        .desc {
+            font-size: 13px;
+            color: #64748b;
+            margin-bottom: 12px;
+            min-height: 38px;
+            line-height: 1.5;
+        }
+
+        .price-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .price {
+            font-size: 20px;
+            font-weight: 700;
+            color: #16a34a;
+        }
+
+        .btn-order {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            background-color: #25D366;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-weight: 700;
+            transition: background 0.3s;
+        }
+
+        .btn-order:hover {
+            background-color: #1ebc57;
+        }
+
+        .btn-disabled {
+            display: block;
+            background-color: #94a3b8;
+            color: white;
+            text-align: center;
+            padding: 10px;
+            border-radius: 10px;
+            font-weight: 700;
+            cursor: not-allowed;
+            text-decoration: none;
+        }
+
+        .badge-out {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: rgba(225, 29, 72, 0.9);
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            z-index: 2;
+        }
+
+        /* النافذة المنبثقة للصورة */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.85);
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+
+        .modal-content {
+            max-width: 90%;
+            max-height: 80%;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            color: white;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            background: rgba(255, 255, 255, 0.2);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .float-wa {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            background-color: #25D366;
+            color: white;
+            width: 55px;
+            height: 55px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            text-decoration: none;
+            font-size: 26px;
+            z-index: 99;
+            transition: transform 0.3s;
+        }
+
+        .float-wa:hover {
+            transform: scale(1.1);
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 13px;
+            color: #94a3b8;
+            margin-top: 40px;
+        }
     </style>
 </head>
+
 <body>
 
-<header>
-    <h1>متجر الحلول الذكية 🛍️</h1>
-</header>
+    <div class="navbar">
+        <h1 id="storeTitle">🛍️ متجر الحلول الذكية</h1>
+        <p id="storeSub">أفضل المنتجات والخدمات الإلكترونية بين يديك</p>
 
-<div class="container">
-    <div class="products-grid">
-        {% for product in products %}
-        <div class="product-card">
-            {% if product.image %}
-            <img src="{{ product.image }}" class="product-image" alt="{{ product.name }}">
-            {% else %}
-            <div class="no-image">لا تتوفر صورة</div>
-            {% endif %}
-            
-            <div class="product-details">
-                <div>
-                    <h3 class="product-title">{{ product.name }}</h3>
-                    <p class="product-desc">{{ product.description }}</p>
+        <!-- أزرار اختيار اللغة -->
+        <div class="lang-switch">
+            <button class="lang-btn active" onclick="setLanguage('ar')">العربية 🇱🇾</button>
+            <button class="lang-btn" onclick="setLanguage('fr')">Français 🇫🇷</button>
+            <button class="lang-btn" onclick="setLanguage('en')">English 🇬🇧</button>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="products-grid">
+            {% for product in products %}
+            <div class="card">
+                {% if product.is_available == 0 %}
+                <div class="badge-out txt-out">نفدت الكمية ❌</div>
+                {% endif %}
+
+                <div class="img-container">
+                    <img src="{{ product.image if product.image else 'https://via.placeholder.com/280x200?text=No+Image' }}"
+                        alt="{{ product.name }}" onclick="openImageModal(this.src)">
                 </div>
-                <div class="product-footer">
-                    <span class="price">{{ product.price }}</span>
-                    <a href="https://wa.me/218000000000" class="buy-btn" target="_blank">اطلب الآن 📲</a>
+
+                <div class="card-body">
+                    <div>
+                        <div class="title">{{ product.name }}</div>
+                        <div class="desc">{{ product.description }}</div>
+                    </div>
+
+                    <div>
+                        <div class="price-row">
+                            <span style="font-size: 12px; color: #64748b;" class="txt-price-lbl">السعر:</span>
+                            <span class="price">{{ product.price }}</span>
+                        </div>
+
+                        {% if product.is_available == 1 %}
+                        <a href="https://wa.me/2189XXXXXXX?text=مرحباً،%20أريد%20طلب%20منتج:%20{{ product.name }}%20بسعر:%20{{ product.price }}"
+                            target="_blank" class="btn-order txt-btn-order">
+                            📲 اطلب الآن
+                        </a>
+                        {% else %}
+                        <span class="btn-disabled txt-out">نفدت الكمية ❌</span>
+                        {% endif %}
+                    </div>
                 </div>
             </div>
+            {% else %}
+            <p style="text-align: center; color: #64748b;" id="txtNoProducts">لا توجد منتجات معروضة حالياً.</p>
+            {% endfor %}
         </div>
-        {% else %}
-        <p class="empty-msg">لا توجد منتجات معروضة حالياً، انتظروا الافتتاح القريب! 🚀</p>
-        {% endfor %}
     </div>
-</div>
+
+    <a href="https://wa.me/218916092788?text=مرحباً،%20لدي%20استفسار%20عام" class="float-wa" target="_blank"
+        title="WhatsApp">
+        💬
+    </a>
+
+    <footer>
+        <p id="txtFooter">© متجر الحلول الذكية - جميع الحقوق محفوظة</p>
+    </footer>
+
+    <div id="imageModal" class="modal" onclick="closeImageModal()">
+        <span class="close-btn" onclick="closeImageModal()">&times;</span>
+        <img class="modal-content" id="imgFull">
+    </div>
+
+    <script>
+        // ترجمات واجهة الموقع بالثلاث لغات
+        const translations = {
+            ar: {
+                dir: 'rtl',
+                title: '🛍️ متجر الحلول الذكية',
+                sub: 'أفضل المنتجات والخدمات الإلكترونية بين يديك',
+                priceLbl: 'السعر:',
+                btnOrder: '📲 اطلب الآن',
+                outOfStock: 'نفدت الكمية ❌',
+                noProducts: 'لا توجد منتجات معروضة حالياً.',
+                footer: '© متجر الحلول الذكية - جميع الحقوق محفوظة'
+            },
+            fr: {
+                dir: 'ltr',
+                title: '🛍️ Smart Solutions Store',
+                sub: 'Les meilleurs produits et services électroniques',
+                priceLbl: 'Prix:',
+                btnOrder: '📲 Commander',
+                outOfStock: 'Épuisé ❌',
+                noProducts: 'Aucun produit disponible pour le moment.',
+                footer: '© Smart Solutions Store - Tous droits réservés'
+            },
+            en: {
+                dir: 'ltr',
+                title: '🛍️ Smart Solutions Store',
+                sub: 'The best electronic products and services at your fingertips',
+                priceLbl: 'Price:',
+                btnOrder: '📲 Order Now',
+                outOfStock: 'Out of Stock ❌',
+                noProducts: 'No products currently displayed.',
+                footer: '© Smart Solutions Store - All rights reserved'
+            }
+        };
+
+        function setLanguage(lang) {
+            const t = translations[lang];
+            document.getElementById('htmlTag').dir = t.dir;
+            document.getElementById('storeTitle').innerText = t.title;
+            document.getElementById('storeSub').innerText = t.sub;
+
+            document.querySelectorAll('.txt-price-lbl').forEach(el => el.innerText = t.priceLbl);
+            document.querySelectorAll('.txt-btn-order').forEach(el => el.innerText = t.btnOrder);
+            document.querySelectorAll('.txt-out').forEach(el => el.innerText = t.outOfStock);
+
+            const noProd = document.getElementById('txtNoProducts');
+            if (noProd) noProd.innerText = t.noProducts;
+
+            document.getElementById('txtFooter').innerText = t.footer;
+
+            // تحديث الأزرار النشطة
+            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+        }
+
+        function openImageModal(src) {
+            document.getElementById("imgFull").src = src;
+            document.getElementById("imageModal").style.display = "flex";
+        }
+        function closeImageModal() {
+            document.getElementById("imageModal").style.display = "none";
+        }
+    </script>
 
 </body>
+
 </html>

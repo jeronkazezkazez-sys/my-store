@@ -1,80 +1,147 @@
 <!DOCTYPE html>
 <html dir="rtl" lang="ar">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>لوحة التحكم - إدارة المنتجات</title>
+    <title>إدارة المتجر</title>
     <style>
-        body { font-family: Arial, sans-serif; background-color: #f4f6f9; margin: 0; padding: 20px; direction: rtl; }
-        .container { max-width: 800px; margin: auto; background: #ffffff; padding: 25px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-        h1, h2 { color: #333; text-align: center; }
-        .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; color: #555; }
-        input[type="text"], textarea { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        button { width: 100%; background-color: #28a745; color: white; padding: 12px; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; font-weight: bold; }
-        button:hover { background-color: #218838; }
-        hr { margin: 30px 0; border: 0; border-top: 1px solid #eee; }
-        .product-item { display: flex; justify-content: space-between; align-items: center; background: #f8f9fa; padding: 12px 15px; border: 1px solid #ddd; border-radius: 5px; margin-bottom: 10px; }
-        .product-info { display: flex; align-items: center; gap: 15px; }
-        .product-img { width: 60px; height: 60px; object-fit: cover; border-radius: 5px; border: 1px solid #ccc; }
-        .delete-btn { background-color: #dc3545; color: white; padding: 6px 12px; text-decoration: none; border-radius: 4px; font-size: 14px; }
+        body {
+            font-family: sans-serif;
+            background-color: #f4f6f9;
+            padding: 20px;
+            direction: rtl;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input,
+        textarea {
+            width: 100%;
+            padding: 8px;
+            box-sizing: border-box;
+        }
+
+        button {
+            background: #28a745;
+            color: white;
+            padding: 10px;
+            border: none;
+            width: 100%;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .product-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #eee;
+            padding: 10px;
+            margin-top: 10px;
+            border-radius: 4px;
+        }
+
+        .actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-status {
+            padding: 5px 10px;
+            text-decoration: none;
+            border-radius: 4px;
+            color: white;
+            font-size: 13px;
+            font-weight: bold;
+        }
+
+        .status-available {
+            background: #17a2b8;
+        }
+
+        .status-out {
+            background: #ffc107;
+            color: black;
+        }
+
+        .delete-btn {
+            background: #dc3545;
+            color: white;
+            padding: 5px 10px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 13px;
+        }
     </style>
 </head>
+
 <body>
+    <div class="container">
+        <h2>إضافة منتج جديد 🛍️</h2>
+        <form action="/add" method="POST">
+            <div class="form-group">
+                <label>اسم المنتج:</label>
+                <input type="text" name="name" required placeholder="مثال: شاحن سريع">
+            </div>
+            <div class="form-group">
+                <label>رابط صورة المنتج (URL):</label>
+                <input type="text" name="image" placeholder="مثال: https://i.imgur.com/example.jpg">
+            </div>
+            <div class="form-group">
+                <label>وصف المنتج:</label>
+                <textarea name="description" rows="2" placeholder="وصف قصير..."></textarea>
+            </div>
+            <div class="form-group">
+                <label>السعر:</label>
+                <input type="text" name="price" required placeholder="مثال: 50 د.ل">
+            </div>
+            <button type="submit">إضافة المنتج ➕</button>
+        </form>
 
-<div class="container">
-    <h1>إدارة المتجر 🛠️</h1>
-    
-    <h2>إضافة منتج جديد</h2>
-    <form action="/add" method="POST">
-        <div class="form-group">
-            <label for="name">اسم المنتج:</label>
-            <input type="text" id="name" name="name" required placeholder="مثال: شاحن سريع">
-        </div>
+        <hr style="margin: 20px 0;">
 
-        <div class="form-group">
-            <label for="image">رابط صورة المنتج (URL):</label>
-            <input type="text" id="image" name="image" placeholder="مثال: https://i.imgur.com/example.jpg">
-            <small style="color: #666; display: block; margin-top: 4px;">يمكنك رفع الصورة على موقع مجاني مثل ImgBB ووضع رابطها هنا.</small>
-        </div>
-        
-        <div class="form-group">
-            <label for="description">وصف المنتج:</label>
-            <textarea id="description" name="description" rows="3" placeholder="اكتب وصفاً قصيراً..."></textarea>
-        </div>
-        
-        <div class="form-group">
-            <label for="price">السعر:</label>
-            <input type="text" id="price" name="price" required placeholder="مثال: 50 د.ل">
-        </div>
-        
-        <button type="submit">إضافة المنتج ➕</button>
-    </form>
-
-    <hr>
-
-    <h2>المنتجات الحالية 📦</h2>
-    <div class="product-list">
+        <h2>المنتجات الحالية 📦</h2>
         {% for product in products %}
         <div class="product-item">
-            <div class="product-info">
-                {% if product.image %}
-                <img src="{{ product.image }}" class="product-img" alt="{{ product.name }}">
+            <div>
+                <strong>{{ product.name }}</strong> - <span style="color: green;">{{ product.price }}</span>
+                <br><small>{{ product.description }}</small>
+                <br>
+                {% if product.is_available == 1 %}
+                <small style="color: green; font-weight: bold;">[الحالة: متوفر ✅]</small>
                 {% else %}
-                <div class="product-img" style="display:flex; align-items:center; justify-center; background:#eee; font-size:10px; text-align:center;">بدون صورة</div>
+                <small style="color: red; font-weight: bold;">[الحالة: نفدت الكمية ❌]</small>
                 {% endif %}
-                <div>
-                    <strong>{{ product.name }}</strong> - <span style="color:#28a745; font-weight:bold;">{{ product.price }}</span>
-                    <br>
-                    <small style="color: #666;">{{ product.description }}</small>
-                </div>
             </div>
-            <a href="/delete/{{ product.id }}" class="delete-btn" onclick="return confirm('هل أنت تأكد من حذف هذا المنتج؟')">حذف 🗑️</a>
+            <div class="actions">
+                <a href="/toggle/{{ product.id }}"
+                    class="btn-status {% if product.is_available == 1 %}status-out{% else %}status-available{% endif %}">
+                    {% if product.is_available == 1 %}تحويل لـ "نفدت الكمية"{% else %}تحويل لـ "متوفر"{% endif %}
+                </a>
+                <a href="/delete/{{ product.id }}" class="delete-btn">حذف 🗑️</a>
+            </div>
         </div>
         {% else %}
-        <p style="text-align: center; color: #777;">لا توجد منتجات حالياً.</p>
+        <p>لا توجد منتجات حالياً.</p>
         {% endfor %}
     </div>
-</div>
-
 </body>
+
+</html>
