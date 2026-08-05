@@ -18,25 +18,28 @@ db = SQLAlchemy(app)
 # 2️⃣ رقم الواتساب الخاص بك
 PHONE_NUMBER = "218916092788"
 
-# 3️⃣ نموذج جدول المنتجات
+# 3️⃣ نموذج جدول المنتجات المطور
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
+    old_price = db.Column(db.Float, nullable=True) # السعر قبل الخصم
+    category = db.Column(db.String(50), default="تفعيلات وبوكسات") # القسم
     image_url = db.Column(db.String(500), nullable=True)
     is_available = db.Column(db.Boolean, default=True)
 
-# 4️⃣ إنشاء الجداول وإضافة العمود الجديد تلقائياً إذا كان مفقوداً
+# 4️⃣ تحديث الهيكل وإنشاء الأعمدة الجديدة تلقائياً
 with app.app_context():
     db.create_all()
     try:
-        # إضافة العمود الجديد لقاعدة البيانات الحالية في حال لم يكن موجوداً
         db.session.execute(text("ALTER TABLE product ADD COLUMN IF NOT EXISTS is_available BOOLEAN DEFAULT TRUE;"))
+        db.session.execute(text("ALTER TABLE product ADD COLUMN IF NOT EXISTS old_price FLOAT;"))
+        db.session.execute(text("ALTER TABLE product ADD COLUMN IF NOT EXISTS category VARCHAR(50) DEFAULT 'تفعيلات وبوكسات';"))
         db.session.commit()
     except Exception as e:
         db.session.rollback()
 
-# 5️⃣ تصميم الواجهة المحدث
+# 5️⃣ تصميم الواجهة العصري والأنيق
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -44,46 +47,80 @@ HTML_TEMPLATE = """
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>🛠️ متجر الحلول الذكية 🛍️</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f8f9fa; color: #333; }
-        .container { max-width: 900px; margin: auto; }
-        .header { text-align: center; margin-bottom: 30px; }
-        .header h1 { color: #1a252f; margin-bottom: 5px; font-size: 1.8em; }
-        .back-link { display: inline-block; margin: 10px 0; padding: 10px 20px; background: #3498db; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        * { box-sizing: border-box; font-family: 'Tajawal', sans-serif; }
+        body { margin: 0; padding: 0; background-color: #f4f6f9; color: #2c3e50; }
         
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-        .card { background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s; position: relative; }
-        .card:hover { transform: translateY(-5px); }
-        .card img { width: 100%; height: 220px; object-fit: contain; background-color: #fff; cursor: zoom-in; padding: 5px; box-sizing: border-box; }
-        .card-body { padding: 15px; }
-        .card-title { font-size: 1.1em; font-weight: bold; margin-bottom: 10px; }
-        .card-price { color: #e74c3c; font-size: 1.2em; font-weight: bold; margin-bottom: 15px; }
+        /* شريط التنبيهات الأعلى */
+        .announcement-bar { background: linear-gradient(90deg, #1e3c72, #2a5298); color: white; text-align: center; padding: 8px 15px; font-size: 0.9em; font-weight: 500; }
         
-        .whatsapp-btn { display: block; text-align: center; background: #25D366; color: white; padding: 12px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 1em; }
-        .whatsapp-btn:hover { background: #1eb854; }
-        .out-of-stock-btn { display: block; text-align: center; background: #95a5a6; color: white; padding: 12px; border-radius: 5px; font-weight: bold; font-size: 1em; cursor: not-allowed; }
-        .badge-out { position: absolute; top: 10px; right: 10px; background: #e74c3c; color: white; padding: 5px 10px; border-radius: 5px; font-size: 0.8em; font-weight: bold; }
+        .container { max-width: 1000px; margin: auto; padding: 20px 15px; }
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h1 { color: #1a252f; margin: 10px 0 5px 0; font-size: 2.2em; font-weight: 800; }
+        .header p { color: #7f8c8d; margin: 0; font-size: 1.05em; }
+        .back-link { display: inline-block; margin-top: 15px; padding: 8px 18px; background: #34495e; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 0.9em; }
 
+        /* شريط الفلترة والأقسام */
+        .category-filter { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
+        .filter-btn { padding: 8px 18px; border: 1px solid #dcdde1; border-radius: 20px; background: white; color: #2c3e50; font-weight: bold; cursor: pointer; transition: 0.3s; }
+        .filter-btn.active, .filter-btn:hover { background: #25D366; color: white; border-color: #25D366; }
+
+        /* شبكة المنتجات */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
+        .card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.3s ease; position: relative; border: 1px solid #edf2f7; }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .card-img-wrapper { position: relative; background: #fff; width: 100%; height: 210px; display: flex; align-items: center; justify-content: center; padding: 10px; border-bottom: 1px solid #f1f2f6; }
+        .card img { max-width: 100%; max-height: 100%; object-fit: contain; cursor: zoom-in; }
+        
+        .badge-out { position: absolute; top: 10px; right: 10px; background: #e74c3c; color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.75em; font-weight: bold; }
+        .badge-sale { position: absolute; top: 10px; left: 10px; background: #e67e22; color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.75em; font-weight: bold; }
+        
+        .card-body { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
+        .card-category { font-size: 0.75em; color: #95a5a6; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
+        .card-title { font-size: 1.05em; font-weight: 700; margin-bottom: 10px; line-height: 1.3; color: #2c3e50; }
+        
+        .price-container { margin-bottom: 15px; display: flex; align-items: baseline; gap: 8px; }
+        .card-price { color: #e74c3c; font-size: 1.25em; font-weight: 800; }
+        .card-old-price { color: #95a5a6; font-size: 0.95em; text-decoration: line-through; }
+
+        .whatsapp-btn { display: block; text-align: center; background: #25D366; color: white; padding: 10px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 0.95em; transition: 0.2s; }
+        .whatsapp-btn:hover { background: #1eb854; }
+        .out-of-stock-btn { display: block; text-align: center; background: #bdc3c7; color: white; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 0.95em; cursor: not-allowed; }
+
+        /* شريط ميزات الثقة */
+        .trust-features { display: flex; justify-content: space-around; background: white; margin-top: 40px; padding: 20px 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); flex-wrap: wrap; gap: 15px; text-align: center; }
+        .feature-item { flex: 1; min-width: 150px; }
+        .feature-icon { font-size: 1.8em; margin-bottom: 5px; }
+        .feature-title { font-weight: bold; font-size: 0.95em; color: #2c3e50; }
+        .feature-desc { font-size: 0.8em; color: #7f8c8d; }
+
+        /* نافذة المعاينة */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
         .modal-content { max-width: 90%; max-height: 85%; border-radius: 8px; }
         .close-btn { position: absolute; top: 20px; right: 35px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; }
 
-        .form-container { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-bottom: 30px; }
+        /* لوحة التحكم */
+        .form-container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px; }
         .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
-        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        .submit-btn { background: #27ae60; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 1em; font-weight: bold; }
-        .cancel-btn { display: inline-block; background: #7f8c8d; color: white; text-decoration: none; padding: 10px 15px; border-radius: 5px; margin-top: 10px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #dcdde1; border-radius: 6px; box-sizing: border-box; font-size: 0.95em; }
+        .submit-btn { background: #27ae60; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; width: 100%; font-size: 1em; font-weight: bold; }
+        .cancel-btn { display: inline-block; background: #7f8c8d; color: white; text-decoration: none; padding: 10px 15px; border-radius: 6px; margin-top: 10px; text-align: center; font-weight: bold; }
         
-        table { width: 100%; border-collapse: collapse; background: white; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
-        th, td { padding: 12px 15px; text-align: right; border-bottom: 1px solid #ddd; }
-        th { background-color: #34495e; color: white; }
-        .action-btn { padding: 6px 12px; border-radius: 4px; text-decoration: none; color: white; font-size: 0.9em; font-weight: bold; display: inline-block; }
+        table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: 15px; }
+        th, td { padding: 12px 15px; text-align: right; border-bottom: 1px solid #f1f2f6; font-size: 0.9em; }
+        th { background-color: #2c3e50; color: white; font-weight: bold; }
+        .action-btn { padding: 5px 10px; border-radius: 4px; text-decoration: none; color: white; font-size: 0.85em; font-weight: bold; display: inline-block; }
         .edit-btn { background-color: #f39c12; }
         .delete-btn { background-color: #e74c3c; }
     </style>
 </head>
 <body>
+    <div class="announcement-bar">
+        ⚡ مرحباً بكم في متجر الحلول الذكية | تفعيلات فورية وقطع غيار أصلية ⚡
+    </div>
+
     <div class="container">
         <div class="header">
             <h1>🛠️ متجر الحلول الذكية 🛍️</h1>
@@ -102,8 +139,19 @@ HTML_TEMPLATE = """
                         <input type="text" name="name" value="{{ edit_product.name if edit_product else '' }}" placeholder="مثال: تفعيل أداة EFT Pro" required>
                     </div>
                     <div class="form-group">
-                        <label>السعر (XOF):</label>
-                        <input type="number" step="0.01" name="price" value="{{ edit_product.price if edit_product else '' }}" placeholder="مثال: 15000" required>
+                        <label>القسم:</label>
+                        <select name="category">
+                            <option value="تفعيلات وبوكسات" {% if edit_product and edit_product.category == 'تفعيلات وبوكسات' %}selected{% endif %}>تفعيلات وبوكسات</option>
+                            <option value="قطع غيار وإكسسوارات" {% if edit_product and edit_product.category == 'قطع غيار وإكسسوارات' %}selected{% endif %}>قطع غيار وإكسسوارات</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>السعر الحقيقي (XOF):</label>
+                        <input type="number" step="0.01" name="price" value="{{ edit_product.price if edit_product else '' }}" placeholder="مثال: 12000" required>
+                    </div>
+                    <div class="form-group">
+                        <label>السعر قبل الخصم (اختياري - يظهر مشطوباً):</label>
+                        <input type="number" step="0.01" name="old_price" value="{{ edit_product.old_price if edit_product and edit_product.old_price else '' }}" placeholder="مثال: 15000">
                     </div>
                     <div class="form-group">
                         <label>رابط صورة المنتج (Image URL):</label>
@@ -129,7 +177,9 @@ HTML_TEMPLATE = """
                     <thead>
                         <tr>
                             <th>الاسم</th>
-                            <th>السعر</th>
+                            <th>القسم</th>
+                            <th>السعر الحالي</th>
+                            <th>السعر السابق</th>
                             <th>الحالة</th>
                             <th>الإجراءات</th>
                         </tr>
@@ -137,8 +187,10 @@ HTML_TEMPLATE = """
                     <tbody>
                         {% for p in products %}
                             <tr>
-                                <td>{{ p.name }}</td>
+                                <td><b>{{ p.name }}</b></td>
+                                <td>{{ p.category }}</td>
                                 <td>{{ "{:,.0f}".format(p.price) }} XOF</td>
+                                <td>{{ "{:,.0f}".format(p.old_price) if p.old_price else '-' }}</td>
                                 <td>
                                     {% if p.is_available %}
                                         <span style="color: green; font-weight: bold;">متوفر</span>
@@ -159,34 +211,77 @@ HTML_TEMPLATE = """
             {% endif %}
 
         {% else %}
+            <!-- الفلترة بحسب الأقسام -->
+            <div class="category-filter">
+                <button class="filter-btn active" onclick="filterCategory('all', this)">📌 الكل</button>
+                <button class="filter-btn" onclick="filterCategory('تفعيلات وبوكسات', this)">💻 تفعيلات وبوكسات</button>
+                <button class="filter-btn" onclick="filterCategory('قطع غيار وإكسسوارات', this)">🔌 قطع غيار وإكسسوارات</button>
+            </div>
+
             {% if products %}
                 <div class="grid">
                     {% for p in products %}
-                        <div class="card">
+                        <div class="card product-card" data-category="{{ p.category }}">
                             {% if not p.is_available %}
                                 <div class="badge-out">غير متوفر</div>
+                            {% elif p.old_price and p.old_price > p.price %}
+                                <div class="badge-sale">عرض خاص 🔥</div>
                             {% endif %}
-                            <img src="{{ p.image_url if p.image_url else 'https://via.placeholder.com/250x200?text=No+Image' }}" 
-                                 alt="{{ p.name }}" 
-                                 onclick="openModal(this.src)">
+                            
+                            <div class="card-img-wrapper">
+                                <img src="{{ p.image_url if p.image_url else 'https://via.placeholder.com/250x200?text=No+Image' }}" 
+                                     alt="{{ p.name }}" 
+                                     onclick="openModal(this.src)">
+                            </div>
+
                             <div class="card-body">
-                                <div class="card-title">{{ p.name }}</div>
-                                <div class="card-price">{{ "{:,.0f}".format(p.price) }} XOF</div>
-                                {% if p.is_available %}
-                                    <a href="https://wa.me/{{ phone }}?text=أهلاً،%20أود%20شراء%20المنتج:%20{{ p.name }}" target="_blank" class="whatsapp-btn">💬 طلب عبر الواتساب</a>
-                                {% else %}
-                                    <div class="out-of-stock-btn">🚫 نفدت الكمية</div>
-                                {% endif %}
+                                <div>
+                                    <div class="card-category">{{ p.category }}</div>
+                                    <div class="card-title">{{ p.name }}</div>
+                                </div>
+                                <div>
+                                    <div class="price-container">
+                                        <span class="card-price">{{ "{:,.0f}".format(p.price) }} XOF</span>
+                                        {% if p.old_price and p.old_price > p.price %}
+                                            <span class="card-old-price">{{ "{:,.0f}".format(p.old_price) }} XOF</span>
+                                        {% endif %}
+                                    </div>
+                                    {% if p.is_available %}
+                                        <a href="https://wa.me/{{ phone }}?text=أهلاً،%20أود%20شراء%20المنتج:%20{{ p.name }}" target="_blank" class="whatsapp-btn">💬 طلب عبر الواتساب</a>
+                                    {% else %}
+                                        <div class="out-of-stock-btn">🚫 نفدت الكمية</div>
+                                    {% endif %}
+                                </div>
                             </div>
                         </div>
                     {% endfor %}
                 </div>
             {% else %}
-                <p style="text-align: center;">لا توجد منتجات مضافة حالياً.</p>
+                <p style="text-align: center; color: #7f8c8d;">لا توجد منتجات مضافة حالياً.</p>
             {% endif %}
+
+            <!-- شريط الثقة والخدمات -->
+            <div class="trust-features">
+                <div class="feature-item">
+                    <div class="feature-icon">⚡</div>
+                    <div class="feature-title">تسليم سريع</div>
+                    <div class="feature-desc">تفعيل فوري ودقيق للمفاتيح والخدمات</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">✔️</div>
+                    <div class="feature-title">منتجات أصيلة</div>
+                    <div class="feature-desc">قطع غيار ومعدات مفحوصة ومضمونة</div>
+                </div>
+                <div class="feature-item">
+                    <div class="feature-icon">🛠️</div>
+                    <div class="feature-title">دعم وتوجيه</div>
+                    <div class="feature-desc">استشارات تقنية متواصلة عبر الواتساب</div>
+                </div>
+            </div>
         {% endif %}
     </div>
 
+    <!-- نافذة المعاينة -->
     <div id="imageModal" class="modal" onclick="closeModal()">
         <span class="close-btn">&times;</span>
         <img class="modal-content" id="fullImage">
@@ -199,6 +294,22 @@ HTML_TEMPLATE = """
         }
         function closeModal() {
             document.getElementById("imageModal").style.display = "none";
+        }
+
+        function filterCategory(cat, btn) {
+            let cards = document.querySelectorAll('.product-card');
+            let btns = document.querySelectorAll('.filter-btn');
+            
+            btns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            cards.forEach(card => {
+                if (cat === 'all' || card.getAttribute('data-category') === cat) {
+                    card.style.display = 'flex';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
         }
     </script>
 </body>
@@ -217,10 +328,20 @@ def admin():
     if request.method == 'POST':
         name = request.form.get('name')
         price = request.form.get('price')
+        old_price = request.form.get('old_price')
+        category = request.form.get('category')
         image_url = request.form.get('image_url')
         is_available = request.form.get('is_available') == '1'
+        
         if name and price:
-            new_prod = Product(name=name, price=float(price), image_url=image_url, is_available=is_available)
+            new_prod = Product(
+                name=name, 
+                price=float(price), 
+                old_price=float(old_price) if old_price else None,
+                category=category,
+                image_url=image_url, 
+                is_available=is_available
+            )
             db.session.add(new_prod)
             db.session.commit()
             return redirect(url_for('admin'))
@@ -235,6 +356,9 @@ def edit_product(product_id):
     if request.method == 'POST':
         product.name = request.form.get('name')
         product.price = float(request.form.get('price'))
+        old_price = request.form.get('old_price')
+        product.old_price = float(old_price) if old_price else None
+        product.category = request.form.get('category')
         product.image_url = request.form.get('image_url')
         product.is_available = request.form.get('is_available') == '1'
         db.session.commit()
