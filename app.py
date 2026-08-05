@@ -4,7 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
 
-# جلب رابط قاعدة البيانات ومعالجة البادئة
+# 1️⃣ جلب رابط قاعدة البيانات ومعالجة البادئة
 db_url = os.environ.get("DATABASE_URL")
 if db_url and db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
@@ -14,20 +14,25 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
-# رقم الواتساب الخاص بالمتجر (مع رمز الدولة بدون +)
-PHONE_NUMBER = "218916092788"  # ضع رقمك هنا
+# 2️⃣ رقم الواتساب الخاص بك (قم بتغيير الرقم أدناه لبرقمك مع رمز الدولة بدون +)
+PHONE_NUMBER = "218916092788"
 
-# نموذج جدول المنتجات المعدل
+# 3️⃣ نموذج جدول المنتجات المعدل (يشمل رابط الصورة)
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
-    image_url = db.Column(db.String(500), nullable=True)  # رابط الصورة
+    image_url = db.Column(db.String(500), nullable=True)
 
+# 4️⃣ تحديث الجداول تلقائياً لحل مشكلة عدم توافق الأعمدة
 with app.app_context():
-    db.create_all()
+    try:
+        db.drop_all()   # حذف الهيكل القديم المتسبب في الخطأ
+        db.create_all() # إنشاء الهيكل الجديد بجميع الأعمدة
+    except Exception as e:
+        print("Database sync error:", e)
 
-# تصميم HTML حديث مع بطاقات ورابط الواتساب
+# 5️⃣ تصميم واجهة الموقع (HTML + CSS)
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -40,9 +45,9 @@ HTML_TEMPLATE = """
         .container { max-width: 900px; margin: auto; }
         .header { text-align: center; margin-bottom: 30px; }
         .header h1 { color: #1a252f; margin-bottom: 5px; }
-        .admin-link { display: inline-block; margin: 10px 0; padding: 8px 16px; background: #3498db; color: white; text-decoration: none; border-radius: 5px; }
+        .admin-link { display: inline-block; margin: 10px 0; padding: 10px 20px; background: #3498db; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
         
-        /* تصميم كروت المنتجات */
+        /* تصميم بطاقات المنتجات */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
         .card { background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; }
         .card img { width: 100%; height: 180px; object-fit: cover; background-color: #eee; }
@@ -57,7 +62,7 @@ HTML_TEMPLATE = """
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
         .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
-        .submit-btn { background: #27ae60; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 1em; }
+        .submit-btn { background: #27ae60; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 1em; font-weight: bold; }
     </style>
 </head>
 <body>
@@ -74,11 +79,11 @@ HTML_TEMPLATE = """
 
         {% if is_admin %}
             <div class="form-container">
-                <h2>إضافة منتج جديد</h2>
+                <h2>إضافة منتج أو خدمة جديدة</h2>
                 <form action="/admin" method="POST">
                     <div class="form-group">
                         <label>اسم المنتج أو الخدمة:</label>
-                        <input type="text" name="name" placeholder="مثال: شاشة أيفون 11 أو تفعيل أداة" required>
+                        <input type="text" name="name" placeholder="مثال: شاشة أيفون 11 أو تفعيل أداة EFT Pro" required>
                     </div>
                     <div class="form-group">
                         <label>السعر ($):</label>
@@ -106,7 +111,7 @@ HTML_TEMPLATE = """
                     {% endfor %}
                 </div>
             {% else %}
-                <p style="text-align: center;">لا توجد منتجات مضافة حالياً.</p>
+                <p style="text-align: center;">لا توجد منتجات مضافة حالياً. اذهب إلى لوحة التحكم لإضافة أول منتج!</p>
             {% endif %}
         {% endif %}
     </div>
@@ -114,11 +119,13 @@ HTML_TEMPLATE = """
 </html>
 """
 
+# 6️⃣ المسار الرئيسي
 @app.route('/')
 def home():
     products = Product.query.all()
     return render_template_string(HTML_TEMPLATE, products=products, is_admin=False, phone=PHONE_NUMBER)
 
+# 7️⃣ مسار لوحة التحكم لإضافة المنتجات
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     if request.method == 'POST':
