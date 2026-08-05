@@ -14,47 +14,43 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
-# 2️⃣ رقم الواتساب الخاص بك (قم بتغيير الرقم أدناه لبرقمك مع رمز الدولة بدون +)
+# 2️⃣ رقم الواتساب الخاص بك (ضع رقمك مع رمز الدولة بدون +)
 PHONE_NUMBER = "218916092788"
 
-# 3️⃣ نموذج جدول المنتجات المعدل (يشمل رابط الصورة)
+# 3️⃣ نموذج جدول المنتجات
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
     image_url = db.Column(db.String(500), nullable=True)
 
-# 4️⃣ تحديث الجداول تلقائياً لحل مشكلة عدم توافق الأعمدة
 with app.app_context():
-    try:
-        db.drop_all()   # حذف الهيكل القديم المتسبب في الخطأ
-        db.create_all() # إنشاء الهيكل الجديد بجميع الأعمدة
-    except Exception as e:
-        print("Database sync error:", e)
+    db.create_all()
 
-# 5️⃣ تصميم واجهة الموقع (HTML + CSS)
+# 4️⃣ تصميم الواجهة المحدث بالاسم الجديد والعملة الأفريقية XOF
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>متجر الحلول الذكية - Smart Solutions Store</title>
+    <title>🛠️ متجر الحلول الذكية 🛍️</title>
     <style>
         body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f8f9fa; color: #333; }
         .container { max-width: 900px; margin: auto; }
         .header { text-align: center; margin-bottom: 30px; }
-        .header h1 { color: #1a252f; margin-bottom: 5px; }
-        .admin-link { display: inline-block; margin: 10px 0; padding: 10px 20px; background: #3498db; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        .header h1 { color: #1a252f; margin-bottom: 5px; font-size: 1.8em; }
+        .back-link { display: inline-block; margin: 10px 0; padding: 10px 20px; background: #3498db; color: white; text-decoration: none; border-radius: 5px; font-weight: bold; }
         
         /* تصميم بطاقات المنتجات */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
-        .card { background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; }
-        .card img { width: 100%; height: 180px; object-fit: cover; background-color: #eee; }
+        .card { background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s; }
+        .card:hover { transform: translateY(-5px); }
+        .card img { width: 100%; height: 200px; object-fit: cover; background-color: #eee; cursor: pointer; }
         .card-body { padding: 15px; }
         .card-title { font-size: 1.1em; font-weight: bold; margin-bottom: 10px; }
         .card-price { color: #e74c3c; font-size: 1.2em; font-weight: bold; margin-bottom: 15px; }
-        .whatsapp-btn { display: block; text-align: center; background: #25D366; color: white; padding: 10px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        .whatsapp-btn { display: block; text-align: center; background: #25D366; color: white; padding: 12px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 1em; }
         .whatsapp-btn:hover { background: #1eb854; }
 
         /* نموذج لوحة التحكم */
@@ -68,26 +64,24 @@ HTML_TEMPLATE = """
 <body>
     <div class="container">
         <div class="header">
-            <h1>🛠️ متجر الحلول الذكية</h1>
+            <h1>🛠️ متجر الحلول الذكية 🛍️</h1>
             <p>Smart Solutions Store</p>
-            {% if not is_admin %}
-                <a href="/admin" class="admin-link">⚙️ لوحة التحكم (إضافة منتج)</a>
-            {% else %}
-                <a href="/" class="admin-link">← العودة للمتجر</a>
+            {% if is_admin %}
+                <a href="/" class="back-link">← العودة للمتجر العام</a>
             {% endif %}
         </div>
 
         {% if is_admin %}
             <div class="form-container">
-                <h2>إضافة منتج أو خدمة جديدة</h2>
+                <h2>لوحة التحكم - إضافة منتج جديد</h2>
                 <form action="/admin" method="POST">
                     <div class="form-group">
                         <label>اسم المنتج أو الخدمة:</label>
-                        <input type="text" name="name" placeholder="مثال: شاشة أيفون 11 أو تفعيل أداة EFT Pro" required>
+                        <input type="text" name="name" placeholder="مثال: شاشة أيفون 11 أو تفعيل أداة" required>
                     </div>
                     <div class="form-group">
-                        <label>السعر ($):</label>
-                        <input type="number" step="0.01" name="price" placeholder="مثال: 50" required>
+                        <label>السعر بالعملة الأفريقية (XOF):</label>
+                        <input type="number" step="0.01" name="price" placeholder="مثال: 15000" required>
                     </div>
                     <div class="form-group">
                         <label>رابط صورة المنتج (Image URL):</label>
@@ -101,17 +95,19 @@ HTML_TEMPLATE = """
                 <div class="grid">
                     {% for p in products %}
                         <div class="card">
-                            <img src="{{ p.image_url if p.image_url else 'https://via.placeholder.com/250x180?text=No+Image' }}" alt="{{ p.name }}">
+                            <a href="https://wa.me/{{ phone }}?text=أهلاً،%20أود%20شراء%20المنتج:%20{{ p.name }}" target="_blank">
+                                <img src="{{ p.image_url if p.image_url else 'https://via.placeholder.com/250x200?text=No+Image' }}" alt="{{ p.name }}" title="اضغط للطلب عبر الواتساب">
+                            </a>
                             <div class="card-body">
                                 <div class="card-title">{{ p.name }}</div>
-                                <div class="card-price">${{ p.price }}</div>
+                                <div class="card-price">{{ "{:,.0f}".format(p.price) }} XOF</div>
                                 <a href="https://wa.me/{{ phone }}?text=أهلاً،%20أود%20شراء%20المنتج:%20{{ p.name }}" target="_blank" class="whatsapp-btn">💬 طلب عبر الواتساب</a>
                             </div>
                         </div>
                     {% endfor %}
                 </div>
             {% else %}
-                <p style="text-align: center;">لا توجد منتجات مضافة حالياً. اذهب إلى لوحة التحكم لإضافة أول منتج!</p>
+                <p style="text-align: center;">لا توجد منتجات مضافة حالياً.</p>
             {% endif %}
         {% endif %}
     </div>
@@ -119,13 +115,13 @@ HTML_TEMPLATE = """
 </html>
 """
 
-# 6️⃣ المسار الرئيسي
+# 5️⃣ الرابط العام للمتجر
 @app.route('/')
 def home():
     products = Product.query.all()
     return render_template_string(HTML_TEMPLATE, products=products, is_admin=False, phone=PHONE_NUMBER)
 
-# 7️⃣ مسار لوحة التحكم لإضافة المنتجات
+# 6️⃣ رابط لوحة التحكم
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     if request.method == 'POST':
