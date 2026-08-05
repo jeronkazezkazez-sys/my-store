@@ -27,7 +27,7 @@ class Product(db.Model):
 with app.app_context():
     db.create_all()
 
-# 4️⃣ تصميم الواجهة المحدث بالاسم الجديد والعملة الأفريقية XOF
+# 4️⃣ تصميم الواجهة مع نافذة تكبير الصورة (Lightbox)
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -46,12 +46,17 @@ HTML_TEMPLATE = """
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
         .card { background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s; }
         .card:hover { transform: translateY(-5px); }
-        .card img { width: 100%; height: 200px; object-fit: cover; background-color: #eee; cursor: pointer; }
+        .card img { width: 100%; height: 220px; object-fit: contain; background-color: #fff; cursor: zoom-in; padding: 5px; box-sizing: border-box; }
         .card-body { padding: 15px; }
         .card-title { font-size: 1.1em; font-weight: bold; margin-bottom: 10px; }
         .card-price { color: #e74c3c; font-size: 1.2em; font-weight: bold; margin-bottom: 15px; }
         .whatsapp-btn { display: block; text-align: center; background: #25D366; color: white; padding: 12px; text-decoration: none; border-radius: 5px; font-weight: bold; font-size: 1em; }
         .whatsapp-btn:hover { background: #1eb854; }
+
+        /* نافذة العرض المكبر للصورة */
+        .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
+        .modal-content { max-width: 90%; max-height: 85%; border-radius: 8px; box-shadow: 0 0 20px rgba(255,255,255,0.2); }
+        .close-btn { position: absolute; top: 20px; right: 35px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; }
 
         /* نموذج لوحة التحكم */
         .form-container { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
@@ -95,9 +100,10 @@ HTML_TEMPLATE = """
                 <div class="grid">
                     {% for p in products %}
                         <div class="card">
-                            <a href="https://wa.me/{{ phone }}?text=أهلاً،%20أود%20شراء%20المنتج:%20{{ p.name }}" target="_blank">
-                                <img src="{{ p.image_url if p.image_url else 'https://via.placeholder.com/250x200?text=No+Image' }}" alt="{{ p.name }}" title="اضغط للطلب عبر الواتساب">
-                            </a>
+                            <img src="{{ p.image_url if p.image_url else 'https://via.placeholder.com/250x200?text=No+Image' }}" 
+                                 alt="{{ p.name }}" 
+                                 title="اضغط لتكبير الصورة"
+                                 onclick="openModal(this.src)">
                             <div class="card-body">
                                 <div class="card-title">{{ p.name }}</div>
                                 <div class="card-price">{{ "{:,.0f}".format(p.price) }} XOF</div>
@@ -111,6 +117,22 @@ HTML_TEMPLATE = """
             {% endif %}
         {% endif %}
     </div>
+
+    <!-- النافذة المكبرة للصورة -->
+    <div id="imageModal" class="modal" onclick="closeModal()">
+        <span class="close-btn">&times;</span>
+        <img class="modal-content" id="fullImage">
+    </div>
+
+    <script>
+        function openModal(src) {
+            document.getElementById("fullImage").src = src;
+            document.getElementById("imageModal").style.display = "flex";
+        }
+        function closeModal() {
+            document.getElementById("imageModal").style.display = "none";
+        }
+    </script>
 </body>
 </html>
 """
