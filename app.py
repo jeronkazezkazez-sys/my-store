@@ -14,58 +14,99 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
-# جدول المنتجات
+# رقم الواتساب الخاص بالمتجر (مع رمز الدولة بدون +)
+PHONE_NUMBER = "218916092788"  # ضع رقمك هنا
+
+# نموذج جدول المنتجات المعدل
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
+    image_url = db.Column(db.String(500), nullable=True)  # رابط الصورة
 
 with app.app_context():
     db.create_all()
 
-# HTML بسيط للواجهة
+# تصميم HTML حديث مع بطاقات ورابط الواتساب
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>متجر الحلول الذكية - Smart Solutions Store</title>
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; background-color: #f4f4f9; color: #333; }
-        h1, h2 { color: #2c3e50; }
-        .container { max-width: 800px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        ul { list-style: none; padding: 0; }
-        li { background: #eee; margin: 5px 0; padding: 10px; border-radius: 4px; display: flex; justify-content: space-between; }
-        form { margin-top: 20px; display: flex; gap: 10px; }
-        input[type="text"], input[type="number"] { padding: 8px; border: 1px solid #ccc; border-radius: 4px; flex: 1; }
-        button { padding: 8px 15px; background: #27ae60; color: white; border: none; border-radius: 4px; cursor: pointer; }
-        button:hover { background: #219150; }
-        .admin-link { display: inline-block; margin-bottom: 15px; color: #2980b9; text-decoration: none; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 0; padding: 20px; background-color: #f8f9fa; color: #333; }
+        .container { max-width: 900px; margin: auto; }
+        .header { text-align: center; margin-bottom: 30px; }
+        .header h1 { color: #1a252f; margin-bottom: 5px; }
+        .admin-link { display: inline-block; margin: 10px 0; padding: 8px 16px; background: #3498db; color: white; text-decoration: none; border-radius: 5px; }
+        
+        /* تصميم كروت المنتجات */
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 20px; }
+        .card { background: white; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; }
+        .card img { width: 100%; height: 180px; object-fit: cover; background-color: #eee; }
+        .card-body { padding: 15px; }
+        .card-title { font-size: 1.1em; font-weight: bold; margin-bottom: 10px; }
+        .card-price { color: #e74c3c; font-size: 1.2em; font-weight: bold; margin-bottom: 15px; }
+        .whatsapp-btn { display: block; text-align: center; background: #25D366; color: white; padding: 10px; text-decoration: none; border-radius: 5px; font-weight: bold; }
+        .whatsapp-btn:hover { background: #1eb854; }
+
+        /* نموذج لوحة التحكم */
+        .form-container { background: white; padding: 25px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; }
+        .form-group input { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        .submit-btn { background: #27ae60; color: white; border: none; padding: 12px 20px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 1em; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>🛠️ متجر الحلول الذكية (Smart Solutions Store)</h1>
-        {% if is_admin %}
-            <h2>لوحة التحكم - إضافة منتج جديد</h2>
-            <form action="/admin" method="POST">
-                <input type="text" name="name" placeholder="اسم المنتج (مثال: شاشة أيفون 11)" required>
-                <input type="number" step="0.01" name="price" placeholder="السعر" required>
-                <button type="submit">إضافة المنتج</button>
-            </form>
-            <br>
-            <a href="/" class="admin-link">← العودة للواجهة الرئيسية</a>
-        {% else %}
-            <a href="/admin" class="admin-link">⚙️ الانتقال إلى لوحة التحكم</a>
-            <h2>قائمة المنتجات والخدمات المتاحة:</h2>
-            {% if products %}
-                <ul>
-                    {% for p in products %}
-                        <li><span>{{ p.name }}</span> <strong>${{ p.price }}</strong></li>
-                    {% endfor %}
-                </ul>
+        <div class="header">
+            <h1>🛠️ متجر الحلول الذكية</h1>
+            <p>Smart Solutions Store</p>
+            {% if not is_admin %}
+                <a href="/admin" class="admin-link">⚙️ لوحة التحكم (إضافة منتج)</a>
             {% else %}
-                <p>لا توجد منتجات مضافة حتى الآن.</p>
+                <a href="/" class="admin-link">← العودة للمتجر</a>
+            {% endif %}
+        </div>
+
+        {% if is_admin %}
+            <div class="form-container">
+                <h2>إضافة منتج جديد</h2>
+                <form action="/admin" method="POST">
+                    <div class="form-group">
+                        <label>اسم المنتج أو الخدمة:</label>
+                        <input type="text" name="name" placeholder="مثال: شاشة أيفون 11 أو تفعيل أداة" required>
+                    </div>
+                    <div class="form-group">
+                        <label>السعر ($):</label>
+                        <input type="number" step="0.01" name="price" placeholder="مثال: 50" required>
+                    </div>
+                    <div class="form-group">
+                        <label>رابط صورة المنتج (Image URL):</label>
+                        <input type="url" name="image_url" placeholder="https://example.com/image.jpg">
+                    </div>
+                    <button type="submit" class="submit-btn">حفظ المنتج</button>
+                </form>
+            </div>
+        {% else %}
+            {% if products %}
+                <div class="grid">
+                    {% for p in products %}
+                        <div class="card">
+                            <img src="{{ p.image_url if p.image_url else 'https://via.placeholder.com/250x180?text=No+Image' }}" alt="{{ p.name }}">
+                            <div class="card-body">
+                                <div class="card-title">{{ p.name }}</div>
+                                <div class="card-price">${{ p.price }}</div>
+                                <a href="https://wa.me/{{ phone }}?text=أهلاً،%20أود%20شراء%20المنتج:%20{{ p.name }}" target="_blank" class="whatsapp-btn">💬 طلب عبر الواتساب</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <p style="text-align: center;">لا توجد منتجات مضافة حالياً.</p>
             {% endif %}
         {% endif %}
     </div>
@@ -73,25 +114,24 @@ HTML_TEMPLATE = """
 </html>
 """
 
-# 1️⃣ الواجهة الرئيسية للمتجر
 @app.route('/')
 def home():
     products = Product.query.all()
-    return render_template_string(HTML_TEMPLATE, products=products, is_admin=False)
+    return render_template_string(HTML_TEMPLATE, products=products, is_admin=False, phone=PHONE_NUMBER)
 
-# 2️⃣ لوحة التحكم لتأكيد وإضافة المنتجات
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     if request.method == 'POST':
         name = request.form.get('name')
         price = request.form.get('price')
+        image_url = request.form.get('image_url')
         if name and price:
-            new_prod = Product(name=name, price=float(price))
+            new_prod = Product(name=name, price=float(price), image_url=image_url)
             db.session.add(new_prod)
             db.session.commit()
             return redirect(url_for('home'))
     
-    return render_template_string(HTML_TEMPLATE, is_admin=True)
+    return render_template_string(HTML_TEMPLATE, is_admin=True, phone=PHONE_NUMBER)
 
 if __name__ == "__main__":
     app.run()
