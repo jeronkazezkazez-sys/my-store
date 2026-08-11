@@ -39,7 +39,7 @@ with app.app_context():
     except Exception as e:
         db.session.rollback()
 
-# 5️⃣ تصميم الواجهة المطور
+# 5️⃣ تصميم الواجهة المطور والمصلح
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -50,7 +50,7 @@ HTML_TEMPLATE = """
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; font-family: 'Tajawal', sans-serif; }
-        body { margin: 0; padding: 0; background-color: #f4f6f9; color: #2c3e50; padding-bottom: 80px; }
+        body { margin: 0; padding: 0; background-color: #f4f6f9; color: #2c3e50; padding-bottom: 80px; top: 0 !important; }
         
         .top-navbar { background: #1e3c72; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .announcement { font-size: 0.9em; font-weight: 500; }
@@ -115,8 +115,7 @@ HTML_TEMPLATE = """
         .feature-desc { font-size: 0.8em; color: #7f8c8d; }
 
         .goog-te-banner-frame { display: none !important; }
-        body { top: 0px !important; }
-        #google_translate_element { display: none; }
+        #google_translate_element { display: none !important; }
 
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
         .modal-content { max-width: 90%; max-height: 85%; border-radius: 8px; }
@@ -147,6 +146,7 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
+    <!-- عنصر الترجمة الخفي -->
     <div id="google_translate_element"></div>
 
     <div class="container">
@@ -333,6 +333,7 @@ HTML_TEMPLATE = """
         <img class="modal-content" id="fullImage">
     </div>
 
+    <!-- محرك ترجمة جوجل المصلح -->
     <script type="text/javascript">
         function googleTranslateElementInit() {
             new google.translate.TranslateElement({
@@ -349,36 +350,19 @@ HTML_TEMPLATE = """
         let cart = [];
         const phoneNumber = "{{ phone }}";
 
-        // 📱 دالة التقاط جهاز وهاتف الزائر تلقائياً
-        function detectUserDevice() {
-            const ua = navigator.userAgent;
-            if (/Android/i.test(ua)) {
-                let match = ua.match(/Android[^;]+; ([^;]+)\)/);
-                return match ? match[1] : "أندرويد";
-            } else if (/iPhone/i.test(ua)) {
-                return "iPhone / iOS";
-            } else if (/iPad/i.test(ua)) {
-                return "iPad";
-            } else if (/Windows/i.test(ua)) {
-                return "كمبيوتر (Windows)";
-            } else if (/Mac/i.test(ua)) {
-                return "كمبيوتر (Mac)";
-            }
-            return "جهاز ذكي";
-        }
-
+        // دالة تغيير اللغة المصلحة بدقة
         function changeLanguage(langCode, btn) {
             let btns = document.querySelectorAll('.lang-btn');
             btns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
 
-            let translateSelect = document.querySelector('.goog-te-combo');
-            if (translateSelect) {
-                translateSelect.value = langCode;
-                translateSelect.dispatchEvent(new Event('change'));
+            let select = document.querySelector('.goog-te-combo');
+            if (select) {
+                select.value = langCode;
+                select.dispatchEvent(new Event('change'));
             }
-            
-            if(langCode === 'ar') {
+
+            if (langCode === 'ar') {
                 document.documentElement.dir = 'rtl';
             } else {
                 document.documentElement.dir = 'ltr';
@@ -425,14 +409,11 @@ HTML_TEMPLATE = """
                 });
             }
 
-            // التقاط اسم جهاز الزائر تلقائياً
-            let userDevice = detectUserDevice();
-
+            // تم إخفاء اسم الهاتف تماماً من رسالة الواتساب للزبون
             let message = "أهلاً، أود طلب المنتجات التالية من متجر الحلول الذكية:\\n\\n";
             cart.forEach(item => {
                 message += `• ${item.name} (العدد: ${item.quantity}) - ${(item.price * item.quantity).toLocaleString()} XOF\\n`;
             });
-            message += `\\n📱 هاتف/جهاز المشتري: ${userDevice}`;
             message += `\\n💵 الإجمالي: ${totalSum.toLocaleString()} XOF`;
             
             document.getElementById('whatsappOrderBtn').href = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
