@@ -15,7 +15,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
-# 2️⃣ رقم الواتساب الخاص بك
+# 2️⃣ رقم الواتساب الخاص بك (تأكد من كتابته بالرمز الدولي بدون +)
 PHONE_NUMBER = "218916092788"
 
 # 3️⃣ نموذج جدول المنتجات المطور
@@ -23,12 +23,12 @@ class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     price = db.Column(db.Float, nullable=False)
-    old_price = db.Column(db.Float, nullable=True) # السعر قبل الخصم
-    category = db.Column(db.String(50), default="تفعيلات وبوكسات") # القسم
+    old_price = db.Column(db.Float, nullable=True)
+    category = db.Column(db.String(50), default="تفعيلات وبوكسات")
     image_url = db.Column(db.String(500), nullable=True)
     is_available = db.Column(db.Boolean, default=True)
 
-# 4️⃣ تحديث الهيكل وإنشاء الأعمدة الجديدة تلقائياً
+# 4️⃣ تحديث الهيكل وإنشاء الأعمدة تلقائياً
 with app.app_context():
     db.create_all()
     try:
@@ -39,7 +39,7 @@ with app.app_context():
     except Exception as e:
         db.session.rollback()
 
-# 5️⃣ تصميم الواجهة العصري والأنيق
+# 5️⃣ تصميم الواجهة المطور مع نظام السلة
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -50,7 +50,7 @@ HTML_TEMPLATE = """
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; font-family: 'Tajawal', sans-serif; }
-        body { margin: 0; padding: 0; background-color: #f4f6f9; color: #2c3e50; }
+        body { margin: 0; padding: 0; background-color: #f4f6f9; color: #2c3e50; padding-bottom: 80px; }
         
         /* شريط التنبيهات الأعلى */
         .announcement-bar { background: linear-gradient(90deg, #1e3c72, #2a5298); color: white; text-align: center; padding: 8px 15px; font-size: 0.9em; font-weight: 500; }
@@ -84,9 +84,29 @@ HTML_TEMPLATE = """
         .card-price { color: #e74c3c; font-size: 1.25em; font-weight: 800; }
         .card-old-price { color: #95a5a6; font-size: 0.95em; text-decoration: line-through; }
 
-        .whatsapp-btn { display: block; text-align: center; background: #25D366; color: white; padding: 10px; text-decoration: none; border-radius: 8px; font-weight: bold; font-size: 0.95em; transition: 0.2s; }
-        .whatsapp-btn:hover { background: #1eb854; }
+        .add-cart-btn { display: block; width: 100%; border: none; text-align: center; background: #1e3c72; color: white; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 0.95em; cursor: pointer; transition: 0.2s; }
+        .add-cart-btn:hover { background: #2a5298; }
         .out-of-stock-btn { display: block; text-align: center; background: #bdc3c7; color: white; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 0.95em; cursor: not-allowed; }
+
+        /* زِرّ السلة العائم السفلية */
+        .cart-floating-btn { position: fixed; bottom: 20px; left: 20px; background: #25D366; color: white; border: none; border-radius: 30px; padding: 12px 22px; font-size: 1.05em; font-weight: bold; box-shadow: 0 4px 20px rgba(0,0,0,0.25); cursor: pointer; display: flex; align-items: center; gap: 10px; z-index: 99; transition: transform 0.2s; }
+        .cart-floating-btn:hover { transform: scale(1.05); }
+        .cart-badge { background: #e74c3c; color: white; border-radius: 50%; padding: 2px 8px; font-size: 0.85em; }
+
+        /* النافذة المنبثقة للسلة */
+        .cart-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
+        .cart-content { background: white; width: 90%; max-width: 500px; border-radius: 12px; padding: 20px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 5px 25px rgba(0,0,0,0.2); }
+        .cart-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .cart-header h3 { margin: 0; font-size: 1.3em; }
+        .close-cart { cursor: pointer; font-size: 1.5em; font-weight: bold; color: #7f8c8d; }
+        .cart-items { flex-grow: 1; overflow-y: auto; margin: 15px 0; }
+        .cart-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #f9f9f9; }
+        .cart-item-info { font-size: 0.95em; }
+        .cart-item-title { font-weight: bold; }
+        .cart-item-price { color: #e74c3c; font-size: 0.85em; }
+        .remove-item { color: #e74c3c; cursor: pointer; font-weight: bold; margin-right: 10px; }
+        .cart-total { font-size: 1.2em; font-weight: bold; text-align: left; margin-top: 10px; border-top: 2px solid #eee; padding-top: 10px; }
+        .send-whatsapp-btn { background: #25D366; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 1em; cursor: pointer; text-align: center; text-decoration: none; display: block; margin-top: 15px; }
 
         /* شريط ميزات الثقة */
         .trust-features { display: flex; justify-content: space-around; background: white; margin-top: 40px; padding: 20px 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); flex-wrap: wrap; gap: 15px; text-align: center; }
@@ -95,10 +115,9 @@ HTML_TEMPLATE = """
         .feature-title { font-weight: bold; font-size: 0.95em; color: #2c3e50; }
         .feature-desc { font-size: 0.8em; color: #7f8c8d; }
 
-        /* نافذة المعاينة */
+        /* نافذة معاينة الصور */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
         .modal-content { max-width: 90%; max-height: 85%; border-radius: 8px; }
-        .close-btn { position: absolute; top: 20px; right: 35px; color: #fff; font-size: 40px; font-weight: bold; cursor: pointer; }
 
         /* لوحة التحكم */
         .form-container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px; }
@@ -247,7 +266,7 @@ HTML_TEMPLATE = """
                                         {% endif %}
                                     </div>
                                     {% if p.is_available %}
-                                        <a href="https://wa.me/{{ phone }}?text=أهلاً،%20أود%20شراء%20المنتج:%20{{ p.name }}" target="_blank" class="whatsapp-btn">💬 طلب عبر الواتساب</a>
+                                        <button class="add-cart-btn" onclick="addToCart('{{ p.name }}', {{ p.price }})">🛒 أضف إلى السلة</button>
                                     {% else %}
                                         <div class="out-of-stock-btn">🚫 نفدت الكمية</div>
                                     {% endif %}
@@ -260,7 +279,30 @@ HTML_TEMPLATE = """
                 <p style="text-align: center; color: #7f8c8d;">لا توجد منتجات مضافة حالياً.</p>
             {% endif %}
 
-            <!-- شريط الثقة والخدمات -->
+            <!-- زر السلة العائم -->
+            <button class="cart-floating-btn" onclick="openCartModal()">
+                🛒 السلة
+                <span class="cart-badge" id="cartCount">0</span>
+            </button>
+
+            <!-- نافذة السلة المنبثقة -->
+            <div id="cartModal" class="cart-modal">
+                <div class="cart-content">
+                    <div class="cart-header">
+                        <h3>🛍️ سلة المشتريات</h3>
+                        <span class="close-cart" onclick="closeCartModal()">&times;</span>
+                    </div>
+                    <div class="cart-items" id="cartItemsContainer">
+                        <p style="text-align:center; color:#7f8c8d;">السلة فارغة حالياً.</p>
+                    </div>
+                    <div class="cart-total">
+                        الإجمالي: <span id="cartTotalSum" style="color:#e74c3c;">0</span> XOF
+                    </div>
+                    <a id="whatsappOrderBtn" href="#" target="_blank" class="send-whatsapp-btn">💬 إرسال الطلب عبر الواتساب</a>
+                </div>
+            </div>
+
+            <!-- شريط ميزات الثقة -->
             <div class="trust-features">
                 <div class="feature-item">
                     <div class="feature-icon">⚡</div>
@@ -283,15 +325,77 @@ HTML_TEMPLATE = """
 
     <!-- نافذة المعاينة -->
     <div id="imageModal" class="modal" onclick="closeModal()">
-        <span class="close-btn">&times;</span>
+        <span class="close-btn" style="position:absolute; top:20px; right:35px; color:#fff; font-size:40px; cursor:pointer;">&times;</span>
         <img class="modal-content" id="fullImage">
     </div>
 
     <script>
+        let cart = [];
+        const phoneNumber = "{{ phone }}";
+
+        function addToCart(name, price) {
+            let item = cart.find(i => i.name === name);
+            if(item) {
+                item.quantity += 1;
+            } else {
+                cart.push({ name: name, price: price, quantity: 1 });
+            }
+            updateCartUI();
+        }
+
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateCartUI();
+        }
+
+        function updateCartUI() {
+            let totalCount = cart.reduce((sum, i) => sum + i.quantity, 0);
+            let totalSum = cart.reduce((sum, i) => sum + (i.price * i.quantity), 0);
+            
+            document.getElementById('cartCount').innerText = totalCount;
+            document.getElementById('cartTotalSum').innerText = totalSum.toLocaleString();
+
+            let container = document.getElementById('cartItemsContainer');
+            if(cart.length === 0) {
+                container.innerHTML = '<p style="text-align:center; color:#7f8c8d;">السلة فارغة حالياً.</p>';
+            } else {
+                container.innerHTML = '';
+                cart.forEach((item, index) => {
+                    container.innerHTML += `
+                        <div class="cart-item">
+                            <div class="cart-item-info">
+                                <div class="cart-item-title">${item.name} (${item.quantity})</div>
+                                <div class="cart-item-price">${(item.price * item.quantity).toLocaleString()} XOF</div>
+                            </div>
+                            <span class="remove-item" onclick="removeFromCart(${index})">حذف</span>
+                        </div>
+                    `;
+                });
+            }
+
+            // تجهيز نص الواتساب
+            let message = "أهلاً، أود طلب المنتجات التالية من متجر الحلول الذكية:\\n\\n";
+            cart.forEach(item => {
+                message += `• ${item.name} (العدد: ${item.quantity}) - ${(item.price * item.quantity).toLocaleString()} XOF\\n`;
+            });
+            message += `\\n💵 الإجمالي: ${totalSum.toLocaleString()} XOF`;
+            
+            document.getElementById('whatsappOrderBtn').href = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
+        }
+
+        function openCartModal() {
+            document.getElementById('cartModal').style.display = 'flex';
+        }
+
+        function closeCartModal() {
+            document.getElementById('cartModal').style.display = 'none';
+        }
+
         function openModal(src) {
             document.getElementById("fullImage").src = src;
             document.getElementById("imageModal").style.display = "flex";
         }
+
         function closeModal() {
             document.getElementById("imageModal").style.display = "none";
         }
@@ -322,7 +426,7 @@ def home():
     products = Product.query.all()
     return render_template_string(HTML_TEMPLATE, products=products, is_admin=False, phone=PHONE_NUMBER)
 
-# 7️⃣ لوحة التحكم واضافة منتج
+# 7️⃣ لوحة التحكم
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     if request.method == 'POST':
