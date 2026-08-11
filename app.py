@@ -15,7 +15,7 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
-# 2️⃣ رقم الواتساب الخاص بك (تأكد من كتابته بالرمز الدولي بدون +)
+# 2️⃣ رقم الواتساب الخاص بك
 PHONE_NUMBER = "218916092788"
 
 # 3️⃣ نموذج جدول المنتجات المطور
@@ -39,23 +39,29 @@ with app.app_context():
     except Exception as e:
         db.session.rollback()
 
-# 5️⃣ تصميم الواجهة المطور مع نظام السلة
+# 5️⃣ تصميم الواجهة المطور مع نظام تحويل اللغات والسلة
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🛠️ متجر الحلول الذكية 🛍️</title>
+    <title>🛠️ متجر الحلول الذكية | Smart Solutions Store 🛍️</title>
     <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
     <style>
         * { box-sizing: border-box; font-family: 'Tajawal', sans-serif; }
         body { margin: 0; padding: 0; background-color: #f4f6f9; color: #2c3e50; padding-bottom: 80px; }
         
-        /* شريط التنبيهات الأعلى */
-        .announcement-bar { background: linear-gradient(90deg, #1e3c72, #2a5298); color: white; text-align: center; padding: 8px 15px; font-size: 0.9em; font-weight: 500; }
+        /* شريط العلوية والشعار مع محول اللغات */
+        .top-navbar { background: #1e3c72; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
+        .announcement { font-size: 0.9em; font-weight: 500; }
         
-        .container { max-width: 1000px; margin: auto; padding: 20px 15px; }
+        /* محول اللغات بالرموز والأعلام */
+        .lang-switcher { display: flex; gap: 8px; align-items: center; }
+        .lang-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 5px; }
+        .lang-btn:hover, .lang-btn.active { background: #25D366; border-color: #25D366; }
+
+        .container { max-width: 1100px; margin: auto; padding: 20px 15px; }
         .header { text-align: center; margin-bottom: 25px; }
         .header h1 { color: #1a252f; margin: 10px 0 5px 0; font-size: 2.2em; font-weight: 800; }
         .header p { color: #7f8c8d; margin: 0; font-size: 1.05em; }
@@ -115,7 +121,12 @@ HTML_TEMPLATE = """
         .feature-title { font-weight: bold; font-size: 0.95em; color: #2c3e50; }
         .feature-desc { font-size: 0.8em; color: #7f8c8d; }
 
-        /* نافذة معاينة الصور */
+        /* إخفاء عناصر جوجل للترجمة الأصلية */
+        .goog-te-banner-frame { display: none !important; }
+        body { top: 0px !important; }
+        #google_translate_element { display: none; }
+
+        /* نافذة المعاينة */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
         .modal-content { max-width: 90%; max-height: 85%; border-radius: 8px; }
 
@@ -136,9 +147,19 @@ HTML_TEMPLATE = """
     </style>
 </head>
 <body>
-    <div class="announcement-bar">
-        ⚡ مرحباً بكم في متجر الحلول الذكية | تفعيلات فورية وقطع غيار أصلية ⚡
+    <div class="top-navbar">
+        <div class="announcement">⚡ مرحباً بكم في متجر الحلول الذكية | Smart Solutions Store ⚡</div>
+        
+        <!-- أزرار اختيار اللغة بالأعلام -->
+        <div class="lang-switcher">
+            <button class="lang-btn active" onclick="changeLanguage('ar', this)">🇸🇦 العربية</button>
+            <button class="lang-btn" onclick="changeLanguage('fr', this)">🇫🇷 Français</button>
+            <button class="lang-btn" onclick="changeLanguage('en', this)">🇬🇧 English</button>
+        </div>
     </div>
+
+    <!-- عنصر ترجمة جوجل المخفي -->
+    <div id="google_translate_element"></div>
 
     <div class="container">
         <div class="header">
@@ -329,9 +350,42 @@ HTML_TEMPLATE = """
         <img class="modal-content" id="fullImage">
     </div>
 
+    <!-- سكريبت الترجمة التلقائية -->
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'ar',
+                includedLanguages: 'ar,fr,en',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+    </script>
+    <script type="text/javascript" src="//translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+
     <script>
         let cart = [];
         const phoneNumber = "{{ phone }}";
+
+        // تغيير اللغة تلقائياً عند الضغط على أزرار الأعلام
+        function changeLanguage(langCode, btn) {
+            let btns = document.querySelectorAll('.lang-btn');
+            btns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+
+            let translateSelect = document.querySelector('.goog-te-combo');
+            if (translateSelect) {
+                translateSelect.value = langCode;
+                translateSelect.dispatchEvent(new Event('change'));
+            }
+            
+            // ضبط اتجاه الصفحة حسب اللغة
+            if(langCode === 'ar') {
+                document.documentElement.dir = 'rtl';
+            } else {
+                document.documentElement.dir = 'ltr';
+            }
+        }
 
         function addToCart(name, price) {
             let item = cart.find(i => i.name === name);
@@ -373,7 +427,6 @@ HTML_TEMPLATE = """
                 });
             }
 
-            // تجهيز نص الواتساب
             let message = "أهلاً، أود طلب المنتجات التالية من متجر الحلول الذكية:\\n\\n";
             cart.forEach(item => {
                 message += `• ${item.name} (العدد: ${item.quantity}) - ${(item.price * item.quantity).toLocaleString()} XOF\\n`;
