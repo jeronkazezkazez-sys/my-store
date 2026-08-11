@@ -18,7 +18,7 @@ db = SQLAlchemy(app)
 # 2️⃣ رقم الواتساب الخاص بك
 PHONE_NUMBER = "218916092788"
 
-# 3️⃣ نموذج جدول المنتجات المطور
+# 3️⃣ نموذج جدول المنتجات
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -39,7 +39,7 @@ with app.app_context():
     except Exception as e:
         db.session.rollback()
 
-# 5️⃣ تصميم الواجهة المطور مع نظام تحويل اللغات والسلة
+# 5️⃣ تصميم الواجهة المطور
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -52,11 +52,9 @@ HTML_TEMPLATE = """
         * { box-sizing: border-box; font-family: 'Tajawal', sans-serif; }
         body { margin: 0; padding: 0; background-color: #f4f6f9; color: #2c3e50; padding-bottom: 80px; }
         
-        /* شريط العلوية والشعار مع محول اللغات */
         .top-navbar { background: #1e3c72; color: white; padding: 10px 20px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px; }
         .announcement { font-size: 0.9em; font-weight: 500; }
         
-        /* محول اللغات بالرموز والأعلام */
         .lang-switcher { display: flex; gap: 8px; align-items: center; }
         .lang-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.85em; font-weight: bold; cursor: pointer; transition: 0.3s; display: flex; align-items: center; gap: 5px; }
         .lang-btn:hover, .lang-btn.active { background: #25D366; border-color: #25D366; }
@@ -67,12 +65,10 @@ HTML_TEMPLATE = """
         .header p { color: #7f8c8d; margin: 0; font-size: 1.05em; }
         .back-link { display: inline-block; margin-top: 15px; padding: 8px 18px; background: #34495e; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 0.9em; }
 
-        /* شريط الفلترة والأقسام */
         .category-filter { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
         .filter-btn { padding: 8px 18px; border: 1px solid #dcdde1; border-radius: 20px; background: white; color: #2c3e50; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .filter-btn.active, .filter-btn:hover { background: #25D366; color: white; border-color: #25D366; }
 
-        /* شبكة المنتجات */
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
         .card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.3s ease; position: relative; border: 1px solid #edf2f7; }
         .card:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
@@ -94,12 +90,10 @@ HTML_TEMPLATE = """
         .add-cart-btn:hover { background: #2a5298; }
         .out-of-stock-btn { display: block; text-align: center; background: #bdc3c7; color: white; padding: 10px; border-radius: 8px; font-weight: bold; font-size: 0.95em; cursor: not-allowed; }
 
-        /* زِرّ السلة العائم السفلية */
         .cart-floating-btn { position: fixed; bottom: 20px; left: 20px; background: #25D366; color: white; border: none; border-radius: 30px; padding: 12px 22px; font-size: 1.05em; font-weight: bold; box-shadow: 0 4px 20px rgba(0,0,0,0.25); cursor: pointer; display: flex; align-items: center; gap: 10px; z-index: 99; transition: transform 0.2s; }
         .cart-floating-btn:hover { transform: scale(1.05); }
         .cart-badge { background: #e74c3c; color: white; border-radius: 50%; padding: 2px 8px; font-size: 0.85em; }
 
-        /* النافذة المنبثقة للسلة */
         .cart-modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.6); justify-content: center; align-items: center; }
         .cart-content { background: white; width: 90%; max-width: 500px; border-radius: 12px; padding: 20px; max-height: 80vh; display: flex; flex-direction: column; box-shadow: 0 5px 25px rgba(0,0,0,0.2); }
         .cart-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eee; padding-bottom: 10px; }
@@ -114,23 +108,19 @@ HTML_TEMPLATE = """
         .cart-total { font-size: 1.2em; font-weight: bold; text-align: left; margin-top: 10px; border-top: 2px solid #eee; padding-top: 10px; }
         .send-whatsapp-btn { background: #25D366; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; font-size: 1em; cursor: pointer; text-align: center; text-decoration: none; display: block; margin-top: 15px; }
 
-        /* شريط ميزات الثقة */
         .trust-features { display: flex; justify-content: space-around; background: white; margin-top: 40px; padding: 20px 10px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.03); flex-wrap: wrap; gap: 15px; text-align: center; }
         .feature-item { flex: 1; min-width: 150px; }
         .feature-icon { font-size: 1.8em; margin-bottom: 5px; }
         .feature-title { font-weight: bold; font-size: 0.95em; color: #2c3e50; }
         .feature-desc { font-size: 0.8em; color: #7f8c8d; }
 
-        /* إخفاء عناصر جوجل للترجمة الأصلية */
         .goog-te-banner-frame { display: none !important; }
         body { top: 0px !important; }
         #google_translate_element { display: none; }
 
-        /* نافذة المعاينة */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
         .modal-content { max-width: 90%; max-height: 85%; border-radius: 8px; }
 
-        /* لوحة التحكم */
         .form-container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
@@ -150,7 +140,6 @@ HTML_TEMPLATE = """
     <div class="top-navbar">
         <div class="announcement">⚡ مرحباً بكم في متجر الحلول الذكية | Smart Solutions Store ⚡</div>
         
-        <!-- أزرار اختيار اللغة بالأعلام -->
         <div class="lang-switcher">
             <button class="lang-btn active" onclick="changeLanguage('ar', this)">🇸🇦 العربية</button>
             <button class="lang-btn" onclick="changeLanguage('fr', this)">🇫🇷 Français</button>
@@ -158,7 +147,6 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
-    <!-- عنصر ترجمة جوجل المخفي -->
     <div id="google_translate_element"></div>
 
     <div class="container">
@@ -251,7 +239,6 @@ HTML_TEMPLATE = """
             {% endif %}
 
         {% else %}
-            <!-- الفلترة بحسب الأقسام -->
             <div class="category-filter">
                 <button class="filter-btn active" onclick="filterCategory('all', this)">📌 الكل</button>
                 <button class="filter-btn" onclick="filterCategory('تفعيلات وبوكسات', this)">💻 تفعيلات وبوكسات</button>
@@ -300,13 +287,11 @@ HTML_TEMPLATE = """
                 <p style="text-align: center; color: #7f8c8d;">لا توجد منتجات مضافة حالياً.</p>
             {% endif %}
 
-            <!-- زر السلة العائم -->
             <button class="cart-floating-btn" onclick="openCartModal()">
                 🛒 السلة
                 <span class="cart-badge" id="cartCount">0</span>
             </button>
 
-            <!-- نافذة السلة المنبثقة -->
             <div id="cartModal" class="cart-modal">
                 <div class="cart-content">
                     <div class="cart-header">
@@ -323,7 +308,6 @@ HTML_TEMPLATE = """
                 </div>
             </div>
 
-            <!-- شريط ميزات الثقة -->
             <div class="trust-features">
                 <div class="feature-item">
                     <div class="feature-icon">⚡</div>
@@ -344,13 +328,11 @@ HTML_TEMPLATE = """
         {% endif %}
     </div>
 
-    <!-- نافذة المعاينة -->
     <div id="imageModal" class="modal" onclick="closeModal()">
         <span class="close-btn" style="position:absolute; top:20px; right:35px; color:#fff; font-size:40px; cursor:pointer;">&times;</span>
         <img class="modal-content" id="fullImage">
     </div>
 
-    <!-- سكريبت الترجمة التلقائية -->
     <script type="text/javascript">
         function googleTranslateElementInit() {
             new google.translate.TranslateElement({
@@ -367,7 +349,24 @@ HTML_TEMPLATE = """
         let cart = [];
         const phoneNumber = "{{ phone }}";
 
-        // تغيير اللغة تلقائياً عند الضغط على أزرار الأعلام
+        // 📱 دالة التقاط جهاز وهاتف الزائر تلقائياً
+        function detectUserDevice() {
+            const ua = navigator.userAgent;
+            if (/Android/i.test(ua)) {
+                let match = ua.match(/Android[^;]+; ([^;]+)\)/);
+                return match ? match[1] : "أندرويد";
+            } else if (/iPhone/i.test(ua)) {
+                return "iPhone / iOS";
+            } else if (/iPad/i.test(ua)) {
+                return "iPad";
+            } else if (/Windows/i.test(ua)) {
+                return "كمبيوتر (Windows)";
+            } else if (/Mac/i.test(ua)) {
+                return "كمبيوتر (Mac)";
+            }
+            return "جهاز ذكي";
+        }
+
         function changeLanguage(langCode, btn) {
             let btns = document.querySelectorAll('.lang-btn');
             btns.forEach(b => b.classList.remove('active'));
@@ -379,7 +378,6 @@ HTML_TEMPLATE = """
                 translateSelect.dispatchEvent(new Event('change'));
             }
             
-            // ضبط اتجاه الصفحة حسب اللغة
             if(langCode === 'ar') {
                 document.documentElement.dir = 'rtl';
             } else {
@@ -427,10 +425,14 @@ HTML_TEMPLATE = """
                 });
             }
 
+            // التقاط اسم جهاز الزائر تلقائياً
+            let userDevice = detectUserDevice();
+
             let message = "أهلاً، أود طلب المنتجات التالية من متجر الحلول الذكية:\\n\\n";
             cart.forEach(item => {
                 message += `• ${item.name} (العدد: ${item.quantity}) - ${(item.price * item.quantity).toLocaleString()} XOF\\n`;
             });
+            message += `\\n📱 هاتف/جهاز المشتري: ${userDevice}`;
             message += `\\n💵 الإجمالي: ${totalSum.toLocaleString()} XOF`;
             
             document.getElementById('whatsappOrderBtn').href = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
