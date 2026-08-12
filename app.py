@@ -1,7 +1,7 @@
 import os
-from flask import Flask, render_template_string, request, redirect, url_for
+from flask import Flask, render_template_string, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
-from sqlalchemy import text
+from sqlalchemy import text, func
 
 app = Flask(__name__)
 
@@ -18,7 +18,7 @@ db = SQLAlchemy(app)
 # 2️⃣ رقم الواتساب الخاص بك
 PHONE_NUMBER = "218916092788"
 
-# 3️⃣ نموذج جدول المنتجات
+# 3️⃣ نماذج جداول قاعدة البيانات
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
@@ -28,7 +28,13 @@ class Product(db.Model):
     image_url = db.Column(db.String(500), nullable=True)
     is_available = db.Column(db.Boolean, default=True)
 
-# 4️⃣ تحديث الهيكل وإنشاء الأعمدة تلقائياً
+# جدول الإحصائيات لتسجيل أجهزة الزوار
+class VisitorLog(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    device_name = db.Column(db.String(150), nullable=False)
+    timestamp = db.Column(db.DateTime, server_default=db.func.now())
+
+# 4️⃣ تحديث الهيكل وإنشاء الأعمدة والجدول الجديد تلقائياً
 with app.app_context():
     db.create_all()
     try:
@@ -39,7 +45,7 @@ with app.app_context():
     except Exception as e:
         db.session.rollback()
 
-# 5️⃣ تصميم الواجهة المطور والمصلح
+# 5️⃣ تصميم الواجهة المطور والمتكامل
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -120,7 +126,7 @@ HTML_TEMPLATE = """
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
         .modal-content { max-width: 90%; max-height: 85%; border-radius: 8px; }
 
-        .form-container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        .form-container, .stats-container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px; }
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
         .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #dcdde1; border-radius: 6px; box-sizing: border-box; font-size: 0.95em; }
@@ -159,6 +165,32 @@ HTML_TEMPLATE = """
         </div>
 
         {% if is_admin %}
+            <!-- لوحة إحصائيات الأجهزة الأكثر استخداماً -->
+            <div class="stats-container">
+                <h2>📊 إحصائيات أجهزة الزوار الأهم</h2>
+                <p style="color: #7f8c8d; font-size: 0.9em;">يتم تسجيل نوع جهاز كل زائر يفتح المتجر لتحديد الهواتف الأكثر استخداماً وتجهيز مخزونك:</p>
+                {% if device_stats %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>نوع الهاتف / الجهاز</th>
+                                <th>عدد الزيارات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in device_stats %}
+                                <tr>
+                                    <td><b>📱 {{ stat.device_name }}</b></td>
+                                    <td><span style="background: #e1f5fe; color: #0288d1; padding: 4px 10px; border-radius: 12px; font-weight: bold;">{{ stat.count }} زيارة</span></td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p style="color: #7f8c8d;">لا توجد بيانات إحصائية مسجلة حتى الآن.</p>
+                {% endif %}
+            </div>
+
             <div class="form-container">
                 <h2>{% if edit_product %}تعديل بيانات المنتج{% else %}إضافة منتج جديد{% endif %}</h2>
                 <form action="{% if edit_product %}/admin/edit/{{ edit_product.id }}{% else %}/admin{% endif %}" method="POST">
@@ -350,7 +382,34 @@ HTML_TEMPLATE = """
         let cart = [];
         const phoneNumber = "{{ phone }}";
 
-        // دالة تغيير اللغة المصلحة بدقة
+        // 📱 دالة التقاط الجهاز تلقائياً
+        function detectUserDevice() {
+            const ua = navigator.userAgent;
+            if (/Android/i.test(ua)) {
+                let match = ua.match(/Android[^;]+; ([^;]+)\)/);
+                return match ? match[1] : "Android Device";
+            } else if (/iPhone/i.test(ua)) {
+                return "iPhone";
+            } else if (/iPad/i.test(ua)) {
+                return "iPad";
+            } else if (/Windows/i.test(ua)) {
+                return "Windows PC";
+            } else if (/Mac/i.test(ua)) {
+                return "Mac PC";
+            }
+            return "Other Device";
+        }
+
+        // إرسال نوع الجهاز خفية إلى قاعدة البيانات عند فتح الموقع (الطريقة 1)
+        window.addEventListener('DOMContentLoaded', () => {
+            const device = detectUserDevice();
+            fetch('/api/log-visitor-device', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ device_name: device })
+            }).catch(e => console.log('Analytics logged.'));
+        });
+
         function changeLanguage(langCode, btn) {
             let btns = document.querySelectorAll('.lang-btn');
             btns.forEach(b => b.classList.remove('active'));
@@ -409,12 +468,14 @@ HTML_TEMPLATE = """
                 });
             }
 
-            // تم إخفاء اسم الهاتف تماماً من رسالة الواتساب للزبون
+            // إدراج الكود المرجعي الخفي للجهاز في أسفل الرسالة (الطريقة 2)
+            let userDevice = detectUserDevice();
             let message = "أهلاً، أود طلب المنتجات التالية من متجر الحلول الذكية:\\n\\n";
             cart.forEach(item => {
                 message += `• ${item.name} (العدد: ${item.quantity}) - ${(item.price * item.quantity).toLocaleString()} XOF\\n`;
             });
             message += `\\n💵 الإجمالي: ${totalSum.toLocaleString()} XOF`;
+            message += `\\n\\n[REF-DEV: ${userDevice}]`;
             
             document.getElementById('whatsappOrderBtn').href = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
         }
@@ -462,7 +523,18 @@ def home():
     products = Product.query.all()
     return render_template_string(HTML_TEMPLATE, products=products, is_admin=False, phone=PHONE_NUMBER)
 
-# 7️⃣ لوحة التحكم
+# 7️⃣ API خلفي لتسجيل جهاز الزائر في قاعدة البيانات خفية
+@app.route('/api/log-visitor-device', methods=['POST'])
+def log_visitor_device():
+    data = request.get_json()
+    if data and 'device_name' in data:
+        log = VisitorLog(device_name=data['device_name'])
+        db.session.add(log)
+        db.session.commit()
+        return jsonify({"status": "success"}), 200
+    return jsonify({"status": "error"}), 400
+
+# 8️⃣ لوحة التحكم ومعاينة الإحصائيات
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     if request.method == 'POST':
@@ -487,9 +559,23 @@ def admin():
             return redirect(url_for('admin'))
     
     products = Product.query.all()
-    return render_template_string(HTML_TEMPLATE, products=products, is_admin=True, edit_product=None, phone=PHONE_NUMBER)
+    
+    # استعلام جلب الأجهزة الأكثر زيارة مرتبة من الأكثر إلى الأقل
+    device_stats = db.session.query(
+        VisitorLog.device_name, 
+        func.count(VisitorLog.id).label('count')
+    ).group_by(VisitorLog.device_name).order_by(text('count DESC')).limit(10).all()
 
-# 8️⃣ تعديل منتج
+    return render_template_string(
+        HTML_TEMPLATE, 
+        products=products, 
+        is_admin=True, 
+        edit_product=None, 
+        phone=PHONE_NUMBER,
+        device_stats=device_stats
+    )
+
+# 9️⃣ تعديل منتج
 @app.route('/admin/edit/<int:product_id>', methods=['GET', 'POST'])
 def edit_product(product_id):
     product = Product.query.get_or_404(product_id)
@@ -505,9 +591,21 @@ def edit_product(product_id):
         return redirect(url_for('admin'))
     
     products = Product.query.all()
-    return render_template_string(HTML_TEMPLATE, products=products, is_admin=True, edit_product=product, phone=PHONE_NUMBER)
+    device_stats = db.session.query(
+        VisitorLog.device_name, 
+        func.count(VisitorLog.id).label('count')
+    ).group_by(VisitorLog.device_name).order_by(text('count DESC')).limit(10).all()
 
-# 9️⃣ حذف منتج
+    return render_template_string(
+        HTML_TEMPLATE, 
+        products=products, 
+        is_admin=True, 
+        edit_product=product, 
+        phone=PHONE_NUMBER,
+        device_stats=device_stats
+    )
+
+# 🔟 حذف منتج
 @app.route('/admin/delete/<int:product_id>')
 def delete_product(product_id):
     product = Product.query.get_or_404(product_id)
