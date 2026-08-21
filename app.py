@@ -1,11 +1,31 @@
-import os
-import csv
-import io
+import os# دالة مساعدة لتقسيم روابط الصور المتعددة عند وجود فاصلة
+def parse_images(image_url_str):
+    if not image_url_str:
+        return ['https://via.placeholder.com/300']  # صورة افتراضية في حال عدم وجود صورة
+    
+    # تحويل النص إلى قائمة روابط مفصولة بفاصلة وإزالة الفراغات
+    images = [url.strip() for url in str(image_url_str).split(',') if url.strip()]
+    return images if images else ['https://via.placeholder.com/300']
+
 from flask import Flask, render_template_string, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text, func
 
 app = Flask(__name__)
+# مثال داخل المسار الرئيسي أو دالة جلب المنتجات
+@app.route('/')
+def index():
+    # افترضنا أنك تجلب المنتجات من قاعدة البيانات (products)
+    # نمر على كل منتج ونضيف له قائمة الصور 'images'
+    for product in products:
+        # إذا كان المنتج عبارة عن dict
+        if isinstance(product, dict):
+            product['images'] = parse_images(product.get('image_url', ''))
+        else:
+            # إذا كان المنتج عبارة عن SQLAlchemy Object / Class
+            product.images = parse_images(getattr(product, 'image_url', ''))
+
+    return render_template('index.html', products=products)
 
 # 1️⃣ جلب رابط قاعدة البيانات ومعالجة البادئة
 db_url = os.environ.get("DATABASE_URL")
@@ -30,6 +50,7 @@ class Product(db.Model):
     image_url = db.Column(db.String(500), nullable=True)
     is_available = db.Column(db.Boolean, default=True)
 
+# جدول الإحصائيات لتسجيل أجهزة الزوار
 class VisitorLog(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     device_name = db.Column(db.String(150), nullable=False)
@@ -46,7 +67,7 @@ with app.app_context():
     except Exception as e:
         db.session.rollback()
 
-# 5️⃣ تصميم الواجهة المطور والمتناسق
+# 5️⃣ تصميم الواجهة المطور والمتكامل
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -68,13 +89,10 @@ HTML_TEMPLATE = """
 
         .container { max-width: 1100px; margin: auto; padding: 20px 15px; }
         .header { text-align: center; margin-bottom: 25px; }
-        .header h1 { color: #1a252f; margin: 10px 0 5px 0; font-size: 2em; font-weight: 800; }
-        .header p { color: #7f8c8d; margin: 0; font-size: 1em; }
+        .header h1 { color: #1a252f; margin: 10px 0 5px 0; font-size: 2.2em; font-weight: 800; }
+        .header p { color: #7f8c8d; margin: 0; font-size: 1.05em; }
         .back-link { display: inline-block; margin-top: 15px; padding: 8px 18px; background: #34495e; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 0.9em; }
 
-        /* ترتيب لوحة التحكم بجانب بعض لمظهر أكثر تناسقاً */
-        .admin-dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 25px; }
-        
         .category-filter { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
         .filter-btn { padding: 8px 18px; border: 1px solid #dcdde1; border-radius: 20px; background: white; color: #2c3e50; font-weight: bold; cursor: pointer; transition: 0.3s; }
         .filter-btn.active, .filter-btn:hover { background: #25D366; color: white; border-color: #25D366; }
@@ -130,24 +148,19 @@ HTML_TEMPLATE = """
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.85); justify-content: center; align-items: center; }
         .modal-content { max-width: 90%; max-height: 85%; border-radius: 8px; }
 
-        .form-container, .stats-container, .bulk-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); height: 100%; }
-        .form-group { margin-bottom: 12px; }
-        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.85em; }
-        .form-group input, .form-group select { width: 100%; padding: 8px 10px; border: 1px solid #dcdde1; border-radius: 6px; box-sizing: border-box; font-size: 0.9em; }
-        .submit-btn { background: #27ae60; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; width: 100%; font-size: 0.95em; font-weight: bold; }
-        .bulk-btn { background: #2980b9; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-size: 0.9em; font-weight: bold; }
-        .cancel-btn { display: inline-block; background: #7f8c8d; color: white; text-decoration: none; padding: 8px 12px; border-radius: 6px; margin-top: 10px; text-align: center; font-weight: bold; font-size: 0.85em; }
+        .form-container, .stats-container { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-bottom: 30px; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 0.9em; }
+        .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #dcdde1; border-radius: 6px; box-sizing: border-box; font-size: 0.95em; }
+        .submit-btn { background: #27ae60; color: white; border: none; padding: 12px 20px; border-radius: 6px; cursor: pointer; width: 100%; font-size: 1em; font-weight: bold; }
+        .cancel-btn { display: inline-block; background: #7f8c8d; color: white; text-decoration: none; padding: 10px 15px; border-radius: 6px; margin-top: 10px; text-align: center; font-weight: bold; }
         
         table { width: 100%; border-collapse: collapse; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 15px rgba(0,0,0,0.05); margin-top: 15px; }
-        th, td { padding: 10px 12px; text-align: right; border-bottom: 1px solid #f1f2f6; font-size: 0.85em; }
+        th, td { padding: 12px 15px; text-align: right; border-bottom: 1px solid #f1f2f6; font-size: 0.9em; }
         th { background-color: #2c3e50; color: white; font-weight: bold; }
-        .action-btn { padding: 4px 8px; border-radius: 4px; text-decoration: none; color: white; font-size: 0.8em; font-weight: bold; display: inline-block; }
+        .action-btn { padding: 5px 10px; border-radius: 4px; text-decoration: none; color: white; font-size: 0.85em; font-weight: bold; display: inline-block; }
         .edit-btn { background-color: #f39c12; }
         .delete-btn { background-color: #e74c3c; }
-        .clear-logs-btn { background-color: #c0392b; color: white; border: none; padding: 6px 12px; border-radius: 6px; font-size: 0.8em; font-weight: bold; cursor: pointer; text-decoration: none; display: inline-block; }
-
-        .alert-success { background: #d4edda; color: #155724; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-weight: bold; font-size: 0.9em; }
-        .alert-danger { background: #f8d7da; color: #721c24; padding: 10px; border-radius: 6px; margin-bottom: 15px; font-weight: bold; font-size: 0.9em; }
     </style>
 </head>
 <body>
@@ -161,6 +174,7 @@ HTML_TEMPLATE = """
         </div>
     </div>
 
+    <!-- عنصر الترجمة الخفي -->
     <div id="google_translate_element"></div>
 
     <div class="container">
@@ -173,60 +187,34 @@ HTML_TEMPLATE = """
         </div>
 
         {% if is_admin %}
-            {% if msg %}
-                <div class="alert-success">{{ msg }}</div>
-            {% endif %}
-            {% if err %}
-                <div class="alert-danger">{{ err }}</div>
-            {% endif %}
-
-            <!-- شبكة تحكم متناسقة ومختصرة للطول -->
-            <div class="admin-dashboard-grid">
-                <!-- قسم رفع CSV -->
-                <div class="bulk-container">
-                    <h3 style="margin-top:0;">📁 رفع منتجات (CSV)</h3>
-                    <p style="color: #7f8c8d; font-size: 0.8em; margin-bottom: 10px;">
-                        اختر ملف CSV بالأعمدة: <code>name, price, old_price, category, image_url, is_available</code>
-                    </p>
-                    <form action="/admin/upload-csv" method="POST" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 10px;">
-                        <input type="file" name="csv_file" accept=".csv" required style="padding: 6px; background: #f8f9fa; border: 1px solid #ccc; border-radius: 6px; font-size: 0.85em;">
-                        <button type="submit" class="bulk-btn">🚀 رفع واستيراد الملف</button>
-                    </form>
-                </div>
-
-                <!-- لوحة إحصائيات الأجهزة مع زر مسح السجلات -->
-                <div class="stats-container">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <h3 style="margin: 0;">📊 أجهزة الزوار</h3>
-                        {% if device_stats %}
-                            <a href="/admin/clear-logs" class="clear-logs-btn" onclick="return confirm('هل أنت تأكد من مسح جميع سجلات أجهزة الزوار؟');">🗑️ مسح السجلات</a>
-                        {% endif %}
-                    </div>
-                    {% if device_stats %}
-                        <table>
-                            <thead>
+            <!-- لوحة إحصائيات الأجهزة الأكثر استخداماً -->
+            <div class="stats-container">
+                <h2>📊 إحصائيات أجهزة الزوار الأهم</h2>
+                <p style="color: #7f8c8d; font-size: 0.9em;">يتم تسجيل نوع جهاز كل زائر يفتح المتجر لتحديد الهواتف الأكثر استخداماً وتجهيز مخزونك:</p>
+                {% if device_stats %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>نوع الهاتف / الجهاز</th>
+                                <th>عدد الزيارات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in device_stats %}
                                 <tr>
-                                    <th>الجهاز</th>
-                                    <th>الزيارات</th>
+                                    <td><b>📱 {{ stat.device_name }}</b></td>
+                                    <td><span style="background: #e1f5fe; color: #0288d1; padding: 4px 10px; border-radius: 12px; font-weight: bold;">{{ stat.count }} زيارة</span></td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {% for stat in device_stats %}
-                                    <tr>
-                                        <td><b>📱 {{ stat.device_name }}</b></td>
-                                        <td><span style="background: #e1f5fe; color: #0288d1; padding: 2px 8px; border-radius: 10px; font-weight: bold;">{{ stat.count }}</span></td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    {% else %}
-                        <p style="color: #7f8c8d; font-size: 0.85em;">لا توجد سجلات حالياً.</p>
-                    {% endif %}
-                </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p style="color: #7f8c8d;">لا توجد بيانات إحصائية مسجلة حتى الآن.</p>
+                {% endif %}
             </div>
 
-            <div class="form-container" style="margin-bottom: 25px;">
-                <h2>{% if edit_product %}تعديل بيانات المنتج{% else %}إضافة منتج يدوي فردي{% endif %}</h2>
+            <div class="form-container">
+                <h2>{% if edit_product %}تعديل بيانات المنتج{% else %}إضافة منتج جديد{% endif %}</h2>
                 <form action="{% if edit_product %}/admin/edit/{{ edit_product.id }}{% else %}/admin{% endif %}" method="POST">
                     <div class="form-group">
                         <label>اسم المنتج أو الخدمة:</label>
@@ -244,7 +232,7 @@ HTML_TEMPLATE = """
                         <input type="number" step="0.01" name="price" value="{{ edit_product.price if edit_product else '' }}" placeholder="مثال: 12000" required>
                     </div>
                     <div class="form-group">
-                        <label>السعر قبل الخصم (اختياري):</label>
+                        <label>السعر قبل الخصم (اختياري - يظهر مشطوباً):</label>
                         <input type="number" step="0.01" name="old_price" value="{{ edit_product.old_price if edit_product and edit_product.old_price else '' }}" placeholder="مثال: 15000">
                     </div>
                     <div class="form-group">
@@ -399,6 +387,7 @@ HTML_TEMPLATE = """
         <img class="modal-content" id="fullImage">
     </div>
 
+    <!-- محرك ترجمة جوجل المصلح -->
     <script type="text/javascript">
         function googleTranslateElementInit() {
             new google.translate.TranslateElement({
@@ -415,6 +404,7 @@ HTML_TEMPLATE = """
         let cart = [];
         const phoneNumber = "{{ phone }}";
 
+        // 📱 دالة التقاط الجهاز تلقائياً
         function detectUserDevice() {
             const ua = navigator.userAgent;
             if (/Android/i.test(ua)) {
@@ -432,6 +422,7 @@ HTML_TEMPLATE = """
             return "Other Device";
         }
 
+        // إرسال نوع الجهاز خفية إلى قاعدة البيانات عند فتح الموقع (الطريقة 1)
         window.addEventListener('DOMContentLoaded', () => {
             const device = detectUserDevice();
             fetch('/api/log-visitor-device', {
@@ -499,6 +490,7 @@ HTML_TEMPLATE = """
                 });
             }
 
+            // إدراج الكود المرجعي الخفي للجهاز في أسفل الرسالة (الطريقة 2)
             let userDevice = detectUserDevice();
             let message = "أهلاً، أود طلب المنتجات التالية من متجر الحلول الذكية:\\n\\n";
             cart.forEach(item => {
@@ -553,7 +545,7 @@ def home():
     products = Product.query.all()
     return render_template_string(HTML_TEMPLATE, products=products, is_admin=False, phone=PHONE_NUMBER)
 
-# 7️⃣ API لتسجيل جهاز الزائر
+# 7️⃣ API خلفي لتسجيل جهاز الزائر في قاعدة البيانات خفية
 @app.route('/api/log-visitor-device', methods=['POST'])
 def log_visitor_device():
     data = request.get_json()
@@ -564,73 +556,9 @@ def log_visitor_device():
         return jsonify({"status": "success"}), 200
     return jsonify({"status": "error"}), 400
 
-# 8️⃣ مسار رفع ملفات CSV
-@app.route('/admin/upload-csv', methods=['POST'])
-def upload_csv():
-    file = request.files.get('csv_file')
-    if not file or not file.filename.endswith('.csv'):
-        return redirect(url_for('admin', err="يرجى اختيار ملف بصيغة CSV صحيحة."))
-    
-    try:
-        stream = io.StringIO(file.stream.read().decode("UTF-8"), newline=None)
-        csv_reader = csv.reader(stream)
-        
-        first_row = next(csv_reader, None)
-        if first_row and first_row[0].strip().lower() in ['name', 'اسم المنتج', 'الاسم']:
-            pass
-        elif first_row:
-            stream.seek(0)
-            csv_reader = csv.reader(stream)
-
-        count = 0
-        for row in csv_reader:
-            if not row or len(row) < 2:
-                continue
-            
-            name = row[0].strip()
-            price = float(row[1].strip()) if row[1].strip() else 0.0
-            old_price = float(row[2].strip()) if len(row) > 2 and row[2].strip() else None
-            category = row[3].strip() if len(row) > 3 and row[3].strip() else "تفعيلات وبوكسات"
-            image_url = row[4].strip() if len(row) > 4 and row[4].strip() else None
-            is_available = True
-            if len(row) > 5 and row[5].strip().lower() in ['false', '0', 'no', 'غير متوفر']:
-                is_available = False
-
-            if name and price:
-                product = Product(
-                    name=name,
-                    price=price,
-                    old_price=old_price,
-                    category=category,
-                    image_url=image_url,
-                    is_available=is_available
-                )
-                db.session.add(product)
-                count += 1
-                
-        db.session.commit()
-        return redirect(url_for('admin', msg=f"تم استيراد {count} منتج بنجاح!"))
-    except Exception as e:
-        db.session.rollback()
-        return redirect(url_for('admin', err=f"حدث خطأ أثناء معالجة الملف: {str(e)}"))
-
-# 9️⃣ مسار مسح سجلات أجهزة الزوار (إعادة الضبط)
-@app.route('/admin/clear-logs')
-def clear_logs():
-    try:
-        VisitorLog.query.delete()
-        db.session.commit()
-        return redirect(url_for('admin', msg="تم مسح جميع سجلات أجهزة الزوار بنجاح!"))
-    except Exception as e:
-        db.session.rollback()
-        return redirect(url_for('admin', err=f"حدث خطأ أثناء مسح السجلات: {str(e)}"))
-
-# 🔟 لوحة التحكم
+# 8️⃣ لوحة التحكم ومعاينة الإحصائيات
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
-    msg = request.args.get('msg')
-    err = request.args.get('err')
-    
     if request.method == 'POST':
         name = request.form.get('name')
         price = request.form.get('price')
@@ -650,9 +578,11 @@ def admin():
             )
             db.session.add(new_prod)
             db.session.commit()
-            return redirect(url_for('admin', msg="تم إضافة المنتج بنجاح!"))
+            return redirect(url_for('admin'))
     
     products = Product.query.all()
+    
+    # استعلام جلب الأجهزة الأكثر زيارة مرتبة من الأكثر إلى الأقل
     device_stats = db.session.query(
         VisitorLog.device_name, 
         func.count(VisitorLog.id).label('count')
@@ -664,12 +594,10 @@ def admin():
         is_admin=True, 
         edit_product=None, 
         phone=PHONE_NUMBER,
-        device_stats=device_stats,
-        msg=msg,
-        err=err
+        device_stats=device_stats
     )
 
-# 1️⃣1️⃣ تعديل منتج
+# 9️⃣ تعديل منتج
 @app.route('/admin/edit/<int:product_id>', methods=['GET', 'POST'])
 def edit_product(product_id):
     product = Product.query.get_or_404(product_id)
@@ -682,7 +610,7 @@ def edit_product(product_id):
         product.image_url = request.form.get('image_url')
         product.is_available = request.form.get('is_available') == '1'
         db.session.commit()
-        return redirect(url_for('admin', msg="تم تعديل المنتج بنجاح!"))
+        return redirect(url_for('admin'))
     
     products = Product.query.all()
     device_stats = db.session.query(
@@ -699,13 +627,13 @@ def edit_product(product_id):
         device_stats=device_stats
     )
 
-# 1️⃣2️⃣ حذف منتج
+# 🔟 حذف منتج
 @app.route('/admin/delete/<int:product_id>')
 def delete_product(product_id):
     product = Product.query.get_or_404(product_id)
     db.session.delete(product)
     db.session.commit()
-    return redirect(url_for('admin', msg="تم حذف المنتج."))
+    return redirect(url_for('admin'))
 
 if __name__ == "__main__":
     app.run()
