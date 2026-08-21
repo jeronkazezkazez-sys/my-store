@@ -6,36 +6,37 @@ from flask_sqlalchemy import SQLAlchemy
 app = Flask(__name__)
 
 # -------------------------------------------------------------------
-# رقم الهاتف الخاص باستلام الطلبات على الواتساب (مع الرمز الدولي بدون +)
+# رقم الهاتف الخاص باستلام الطلبات (مع الرمز الدولي بدون +)
 # -------------------------------------------------------------------
-WHATSAPP_NUMBER = "22791697671"  # ضع رقمك هنا (مثال: رمز النيجر 227 متبوعاً بالرقم)
+WHATSAPP_NUMBER = "22791697671"  # استبدله برقمك
 
-# إعداد قاعدة البيانات (PostgreSQL على Render أو SQLite محلياً)
-app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL', 'sqlite:///store.db')
-if app.config['SQLALCHEMY_DATABASE_URI'].startswith("postgres://"):
-    app.config['SQLALCHEMY_DATABASE_URI'] = app.config['SQLALCHEMY_DATABASE_URI'].replace("postgres://", "postgresql://", 1)
+# إعداد قاعدة البيانات
+db_url = os.environ.get('DATABASE_URL', 'sqlite:///store.db')
+if db_url.startswith("postgres://"):
+    db_url = db_url.replace("postgres://", "postgresql://", 1)
 
+app.config['SQLALCHEMY_DATABASE_URI'] = db_url
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+
 db = SQLAlchemy(app)
 
 # -------------------------------------------------------------------
-# نموذج قاعدة البيانات للمنتجات (Product Model)
+# نموذج قاعدة البيانات للمنتجات
 # -------------------------------------------------------------------
 class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String(200), nullable=False)
     price = db.Column(db.Float, nullable=False)
-    image_url = db.Column(db.Text, nullable=True)  # يستقبل روابط متعددة مفصولة بفاصلة
+    image_url = db.Column(db.Text, nullable=True)
     category = db.Column(db.String(100), nullable=True)
     description = db.Column(db.Text, nullable=True)
 
 # -------------------------------------------------------------------
-# الدالة المسؤولة عن تقسيم روابط الصور المتعددة
+# دالة تقسيم روابط الصور المتعددة
 # -------------------------------------------------------------------
 def parse_images(image_url_str):
     if not image_url_str:
         return ['https://via.placeholder.com/300']
-    
     images = [url.strip() for url in str(image_url_str).split(',') if url.strip()]
     return images if images else ['https://via.placeholder.com/300']
 
@@ -45,11 +46,14 @@ def parse_images(image_url_str):
 
 @app.route('/')
 def index():
-    products_query = Product.query.all()
+    try:
+        products_query = Product.query.all()
+    except Exception:
+        products_query = []
+        
     products = []
-    
     for p in products_query:
-        product_dict = {
+        products.append({
             'id': p.id,
             'title': p.title,
             'price': p.price,
@@ -57,8 +61,7 @@ def index():
             'images': parse_images(p.image_url),
             'category': p.category,
             'description': p.description
-        }
-        products.append(product_dict)
+        })
         
     return render_template('index.html', products=products, whatsapp_number=WHATSAPP_NUMBER)
 
@@ -76,7 +79,6 @@ def product_detail(product_id):
     }
     return render_template('product.html', product=product, whatsapp_number=WHATSAPP_NUMBER)
 
-# مسار للتحويل المباشر إلى الواتساب لشراء منتج معين
 @app.route('/buy/<int:product_id>')
 def buy_product(product_id):
     p = Product.query.get_or_404(product_id)
@@ -85,7 +87,6 @@ def buy_product(product_id):
     whatsapp_url = f"https://wa.me/{WHATSAPP_NUMBER}?text={encoded_message}"
     return redirect(whatsapp_url)
 
-# مسار لإضافة منتج جديد
 @app.route('/api/add-product', methods=['POST'])
 def add_product():
     data = request.json or request.form
@@ -101,10 +102,13 @@ def add_product():
     return jsonify({'status': 'success', 'message': 'Product added successfully!'})
 
 # -------------------------------------------------------------------
-# إنشاء الجداول وتعديل الخادم
+# تهيئة الجداول ودعم خادم Gunicorn على Render
 # -------------------------------------------------------------------
 with app.app_context():
-    db.create_all()
+    try:
+        db.create_all()
+    except Exception as e:
+        print(f"Database initialization note: {e}")
 
 if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5000))
