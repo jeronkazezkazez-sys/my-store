@@ -67,7 +67,7 @@ with app.app_context():
         db.session.rollback()
 
 # 5️⃣ تصميم الواجهة المطور والمزود بالسلايدر
-HTML_TEMPLATE = """
+HTML_TEMPLATE = r"""
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -102,7 +102,7 @@ HTML_TEMPLATE = """
         .card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.3s ease; position: relative; border: 1px solid #edf2f7; }
         .card:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
         
-        /* ---------------- CSS السلايدر والتمرير ---------------- */
+        /* CSS السلايدر والتمرير */
         .slider-container { position: relative; width: 100%; height: 210px; overflow: hidden; background: #fff; border-bottom: 1px solid #f1f2f6; }
         .slider-wrapper { display: flex; width: 100%; height: 100%; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
         .slider-wrapper::-webkit-scrollbar { display: none; }
@@ -111,7 +111,6 @@ HTML_TEMPLATE = """
         .slider-dots { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 10; background: rgba(255,255,255,0.7); padding: 3px 8px; border-radius: 12px; backdrop-filter: blur(2px); }
         .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; transition: all 0.3s ease; }
         .dot.active { width: 18px; border-radius: 10px; background: #000; }
-        /* ---------------------------------------------------- */
 
         .badge-out { position: absolute; top: 10px; right: 10px; background: #e74c3c; color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.75em; font-weight: bold; z-index: 10; }
         .badge-sale { position: absolute; top: 10px; left: 10px; background: #e67e22; color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.75em; font-weight: bold; z-index: 10; }
@@ -209,7 +208,6 @@ HTML_TEMPLATE = """
             {% endif %}
 
             <div class="admin-dashboard-grid">
-                <!-- قسم رفع CSV -->
                 <div class="bulk-container">
                     <h3 style="margin-top:0;">📁 رفع منتجات (CSV)</h3>
                     <p style="color: #7f8c8d; font-size: 0.8em; margin-bottom: 10px;">
@@ -221,7 +219,6 @@ HTML_TEMPLATE = """
                     </form>
                 </div>
 
-                <!-- لوحة إحصائيات الأجهزة -->
                 <div class="stats-container">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <h3 style="margin: 0;">📊 أجهزة الزوار</h3>
@@ -252,7 +249,6 @@ HTML_TEMPLATE = """
                 </div>
             </div>
 
-            <!-- نموذج إضافة/تعديل المنتجات -->
             <div class="form-container" style="margin-bottom: 25px;">
                 <h2>{% if edit_product %}تعديل بيانات المنتج{% else %}إضافة منتج يدوي فردي{% endif %}</h2>
                 <form action="{% if edit_product %}/admin/edit/{{ edit_product.id }}{% else %}/admin{% endif %}" method="POST" enctype="multipart/form-data">
@@ -354,7 +350,6 @@ HTML_TEMPLATE = """
                                 <div class="badge-sale">عرض خاص 🔥</div>
                             {% endif %}
                             
-                            <!-- ---------------- السلايدر لعرض الصور المتعددة ---------------- -->
                             {% set images = p.image_url.split(',') if p.image_url else ['https://via.placeholder.com/250x200?text=No+Image'] %}
                             <div class="slider-container">
                                 <div class="slider-wrapper" onscroll="updateDots(this)">
@@ -370,7 +365,6 @@ HTML_TEMPLATE = """
                                     </div>
                                 {% endif %}
                             </div>
-                            <!-- ----------------------------------------------------------- -->
 
                             <div class="card-body">
                                 <div>
@@ -460,7 +454,6 @@ HTML_TEMPLATE = """
         let cart = [];
         const phoneNumber = "{{ phone }}";
 
-        // التحديث التلقائي لنقاط السلايدر عند التمرير
         function updateDots(wrapper) {
             const scrollLeft = Math.abs(wrapper.scrollLeft);
             const slideWidth = wrapper.clientWidth;
@@ -479,8 +472,7 @@ HTML_TEMPLATE = """
         function detectUserDevice() {
             const ua = navigator.userAgent;
             if (/Android/i.test(ua)) {
-                let match = ua.match(/Android[^;]+; ([^;]+)\)/);
-                return match ? match[1] : "Android Device";
+                return "Android Device";
             } else if (/iPhone/i.test(ua)) {
                 return "iPhone";
             } else if (/iPad/i.test(ua)) {
@@ -561,12 +553,12 @@ HTML_TEMPLATE = """
             }
 
             let userDevice = detectUserDevice();
-            let message = "أهلاً، أود طلب المنتجات التالية من متجر الحلول الذكية:\\n\\n";
+            let message = "أهلاً، أود طلب المنتجات التالية من متجر الحلول الذكية:\n\n";
             cart.forEach(item => {
-                message += `• ${item.name} (العدد: ${item.quantity}) - ${(item.price * item.quantity).toLocaleString()} CFA\\n`;
+                message += `• ${item.name} (العدد: ${item.quantity}) - ${(item.price * item.quantity).toLocaleString()} CFA\n`;
             });
-            message += `\\n💵 الإجمالي: ${totalSum.toLocaleString()} CFA`;
-            message += `\\n\\n[REF-DEV: ${userDevice}]`;
+            message += `\n💵 الإجمالي: ${totalSum.toLocaleString()} CFA`;
+            message += `\n\n[REF-DEV: ${userDevice}]`;
             
             document.getElementById('whatsappOrderBtn').href = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
         }
@@ -686,7 +678,7 @@ def clear_logs():
         db.session.rollback()
         return redirect(url_for('admin', err=f"حدث خطأ أثناء مسح السجلات: {str(e)}"))
 
-# 🔟 لوحة التحكم مع دعم رفع صور متعددة
+# 🔟 لوحة التحكم
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     msg = request.args.get('msg')
