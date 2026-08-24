@@ -1,6 +1,8 @@
 import os
 import csv
 import io
+import base64
+import requests
 from flask import Flask, render_template_string, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text, func
@@ -17,9 +19,26 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
-# 2️⃣ رقم الواتساب والعملة
+# 2️⃣ رقم الواتساب والعملة ومفتاح ImgBB
 PHONE_NUMBER = "218916092788"
 CURRENCY = "CFA"
+IMGBB_API_KEY = "6d702921b742f8321da19d349e46f00d"
+
+# دالة رفع الصورة إلى ImgBB
+def upload_image_to_imgbb(image_file):
+    try:
+        url = "https://api.imgbb.com/1/upload"
+        payload = {
+            "key": IMGBB_API_KEY,
+            "image": base64.b64encode(image_file.read()).decode('utf-8'),
+        }
+        res = requests.post(url, payload)
+        data = res.json()
+        if data.get("success"):
+            return data["data"]["url"]
+    except Exception as e:
+        print(f"Error uploading image: {e}")
+    return None
 
 # 3️⃣ نماذج جداول قاعدة البيانات
 class Product(db.Model):
@@ -28,7 +47,7 @@ class Product(db.Model):
     price = db.Column(db.Float, nullable=False)
     old_price = db.Column(db.Float, nullable=True)
     category = db.Column(db.String(50), default="تفعيلات وبوكسات")
-    image_url = db.Column(db.String(500), nullable=True)
+    image_url = db.Column(db.Text, nullable=True)  # يستوعب روابط متعددة مفصولة بفاصلة
     is_available = db.Column(db.Boolean, default=True)
 
 class VisitorLog(db.Model):
@@ -47,7 +66,7 @@ with app.app_context():
     except Exception as e:
         db.session.rollback()
 
-# 5️⃣ تصميم الواجهة المطور والمتناسق
+# 5️⃣ تصميم الواجهة المطور والمزود بالسلايدر
 HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -73,7 +92,6 @@ HTML_TEMPLATE = """
         .header p { color: #7f8c8d; margin: 0; font-size: 1em; }
         .back-link { display: inline-block; margin-top: 15px; padding: 8px 18px; background: #34495e; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 0.9em; }
 
-        /* ترتيب لوحة التحكم بجانب بعض لمظهر أكثر تناسقاً */
         .admin-dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 25px; }
         
         .category-filter { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
@@ -83,11 +101,20 @@ HTML_TEMPLATE = """
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
         .card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.3s ease; position: relative; border: 1px solid #edf2f7; }
         .card:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
-        .card-img-wrapper { position: relative; background: #fff; width: 100%; height: 210px; display: flex; align-items: center; justify-content: center; padding: 10px; border-bottom: 1px solid #f1f2f6; }
-        .card img { max-width: 100%; max-height: 100%; object-fit: contain; cursor: zoom-in; }
         
-        .badge-out { position: absolute; top: 10px; right: 10px; background: #e74c3c; color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.75em; font-weight: bold; }
-        .badge-sale { position: absolute; top: 10px; left: 10px; background: #e67e22; color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.75em; font-weight: bold; }
+        /* ---------------- CSS السلايدر والتمرير ---------------- */
+        .slider-container { position: relative; width: 100%; height: 210px; overflow: hidden; background: #fff; border-bottom: 1px solid #f1f2f6; }
+        .slider-wrapper { display: flex; width: 100%; height: 100%; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+        .slider-wrapper::-webkit-scrollbar { display: none; }
+        .slide-img { min-width: 100%; height: 100%; object-fit: contain; scroll-snap-align: start; padding: 10px; cursor: zoom-in; }
+        
+        .slider-dots { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 10; background: rgba(255,255,255,0.7); padding: 3px 8px; border-radius: 12px; backdrop-filter: blur(2px); }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; transition: all 0.3s ease; }
+        .dot.active { width: 18px; border-radius: 10px; background: #000; }
+        /* ---------------------------------------------------- */
+
+        .badge-out { position: absolute; top: 10px; right: 10px; background: #e74c3c; color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.75em; font-weight: bold; z-index: 10; }
+        .badge-sale { position: absolute; top: 10px; left: 10px; background: #e67e22; color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.75em; font-weight: bold; z-index: 10; }
         
         .card-body { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
         .card-category { font-size: 0.75em; color: #95a5a6; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
@@ -181,7 +208,6 @@ HTML_TEMPLATE = """
                 <div class="alert-danger">{{ err }}</div>
             {% endif %}
 
-            <!-- شبكة تحكم متناسقة ومختصرة للطول -->
             <div class="admin-dashboard-grid">
                 <!-- قسم رفع CSV -->
                 <div class="bulk-container">
@@ -195,7 +221,7 @@ HTML_TEMPLATE = """
                     </form>
                 </div>
 
-                <!-- لوحة إحصائيات الأجهزة مع زر مسح السجلات -->
+                <!-- لوحة إحصائيات الأجهزة -->
                 <div class="stats-container">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <h3 style="margin: 0;">📊 أجهزة الزوار</h3>
@@ -226,9 +252,10 @@ HTML_TEMPLATE = """
                 </div>
             </div>
 
+            <!-- نموذج إضافة/تعديل المنتجات -->
             <div class="form-container" style="margin-bottom: 25px;">
                 <h2>{% if edit_product %}تعديل بيانات المنتج{% else %}إضافة منتج يدوي فردي{% endif %}</h2>
-                <form action="{% if edit_product %}/admin/edit/{{ edit_product.id }}{% else %}/admin{% endif %}" method="POST">
+                <form action="{% if edit_product %}/admin/edit/{{ edit_product.id }}{% else %}/admin{% endif %}" method="POST" enctype="multipart/form-data">
                     <div class="form-group">
                         <label>اسم المنتج أو الخدمة:</label>
                         <input type="text" name="name" value="{{ edit_product.name if edit_product else '' }}" placeholder="مثال: تفعيل أداة EFT Pro" required>
@@ -249,8 +276,13 @@ HTML_TEMPLATE = """
                         <input type="number" step="0.01" name="old_price" value="{{ edit_product.old_price if edit_product and edit_product.old_price else '' }}" placeholder="مثال: 15000">
                     </div>
                     <div class="form-group">
-                        <label>رابط صورة المنتج (Image URL):</label>
-                        <input type="url" name="image_url" value="{{ edit_product.image_url if edit_product else '' }}" placeholder="https://example.com/image.jpg">
+                        <label>🖼️ رفع صور متعددة من الجهاز مباشرة:</label>
+                        <input type="file" name="image_files" accept="image/*" multiple style="background: #f8f9fa; padding: 6px; border: 1px solid #ccc; border-radius: 6px;">
+                        <small style="color:#7f8c8d;">يمكنك تحديد أكثر من صورة في وقت واحد.</small>
+                    </div>
+                    <div class="form-group">
+                        <label>أو ضع روابط صور خارجية (افصل بين الروابط بفاصلة):</label>
+                        <input type="text" name="image_url" value="{{ edit_product.image_url if edit_product else '' }}" placeholder="https://site.com/img1.jpg, https://site.com/img2.jpg">
                     </div>
                     <div class="form-group">
                         <label>حالة التوفر في المخزن:</label>
@@ -322,11 +354,23 @@ HTML_TEMPLATE = """
                                 <div class="badge-sale">عرض خاص 🔥</div>
                             {% endif %}
                             
-                            <div class="card-img-wrapper">
-                                <img src="{{ p.image_url if p.image_url else 'https://via.placeholder.com/250x200?text=No+Image' }}" 
-                                     alt="{{ p.name }}" 
-                                     onclick="openModal(this.src)">
+                            <!-- ---------------- السلايدر لعرض الصور المتعددة ---------------- -->
+                            {% set images = p.image_url.split(',') if p.image_url else ['https://via.placeholder.com/250x200?text=No+Image'] %}
+                            <div class="slider-container">
+                                <div class="slider-wrapper" onscroll="updateDots(this)">
+                                    {% for img in images %}
+                                        <img src="{{ img.strip() }}" class="slide-img" alt="{{ p.name }}" onclick="openModal(this.src)">
+                                    {% endfor %}
+                                </div>
+                                {% if images|length > 1 %}
+                                    <div class="slider-dots">
+                                        {% for img in images %}
+                                            <div class="dot {% if loop.first %}active{% endif %}"></div>
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
                             </div>
+                            <!-- ----------------------------------------------------------- -->
 
                             <div class="card-body">
                                 <div>
@@ -415,6 +459,22 @@ HTML_TEMPLATE = """
     <script>
         let cart = [];
         const phoneNumber = "{{ phone }}";
+
+        // التحديث التلقائي لنقاط السلايدر عند التمرير
+        function updateDots(wrapper) {
+            const scrollLeft = Math.abs(wrapper.scrollLeft);
+            const slideWidth = wrapper.clientWidth;
+            const index = Math.round(scrollLeft / slideWidth);
+            
+            const dots = wrapper.parentElement.querySelectorAll('.dot');
+            dots.forEach((dot, i) => {
+                if(i === index) {
+                    dot.classList.add('active');
+                } else {
+                    dot.classList.remove('active');
+                }
+            });
+        }
 
         function detectUserDevice() {
             const ua = navigator.userAgent;
@@ -615,7 +675,7 @@ def upload_csv():
         db.session.rollback()
         return redirect(url_for('admin', err=f"حدث خطأ أثناء معالجة الملف: {str(e)}"))
 
-# 9️⃣ مسار مسح سجلات أجهزة الزوار (إعادة الضبط)
+# 9️⃣ مسار مسح سجلات أجهزة الزوار
 @app.route('/admin/clear-logs')
 def clear_logs():
     try:
@@ -626,7 +686,7 @@ def clear_logs():
         db.session.rollback()
         return redirect(url_for('admin', err=f"حدث خطأ أثناء مسح السجلات: {str(e)}"))
 
-# 🔟 لوحة التحكم
+# 🔟 لوحة التحكم مع دعم رفع صور متعددة
 @app.route('/admin', methods=['GET', 'POST'])
 def admin():
     msg = request.args.get('msg')
@@ -637,16 +697,32 @@ def admin():
         price = request.form.get('price')
         old_price = request.form.get('old_price')
         category = request.form.get('category')
-        image_url = request.form.get('image_url')
+        image_url_input = request.form.get('image_url')
         is_available = request.form.get('is_available') == '1'
         
+        uploaded_urls = []
+        image_files = request.files.getlist('image_files')
+        for f in image_files:
+            if f and f.filename != '':
+                url = upload_image_to_imgbb(f)
+                if url:
+                    uploaded_urls.append(url)
+                    
+        final_image_urls = []
+        if uploaded_urls:
+            final_image_urls.extend(uploaded_urls)
+        if image_url_input:
+            final_image_urls.extend([u.strip() for u in image_url_input.split(',') if u.strip()])
+
+        final_image_string = ",".join(final_image_urls) if final_image_urls else None
+
         if name and price:
             new_prod = Product(
                 name=name, 
                 price=float(price), 
                 old_price=float(old_price) if old_price else None,
                 category=category,
-                image_url=image_url, 
+                image_url=final_image_string, 
                 is_available=is_available
             )
             db.session.add(new_prod)
@@ -680,7 +756,25 @@ def edit_product(product_id):
         old_price = request.form.get('old_price')
         product.old_price = float(old_price) if old_price else None
         product.category = request.form.get('category')
-        product.image_url = request.form.get('image_url')
+        
+        uploaded_urls = []
+        image_files = request.files.getlist('image_files')
+        for f in image_files:
+            if f and f.filename != '':
+                url = upload_image_to_imgbb(f)
+                if url:
+                    uploaded_urls.append(url)
+
+        image_url_input = request.form.get('image_url')
+        final_image_urls = []
+        if uploaded_urls:
+            final_image_urls.extend(uploaded_urls)
+        if image_url_input:
+            final_image_urls.extend([u.strip() for u in image_url_input.split(',') if u.strip()])
+
+        if final_image_urls:
+            product.image_url = ",".join(final_image_urls)
+
         product.is_available = request.form.get('is_available') == '1'
         db.session.commit()
         return redirect(url_for('admin', msg="تم تعديل المنتج بنجاح!"))
