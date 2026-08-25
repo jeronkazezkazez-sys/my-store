@@ -66,7 +66,7 @@ with app.app_context():
     except Exception as e:
         db.session.rollback()
 
-# 5️⃣ تصميم الواجهة المطور والمزود بالسلايدر
+# 5️⃣ تصميم الواجهة المطور والمزود بالسلايدر والتمرير المرن
 HTML_TEMPLATE = r"""
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
@@ -102,15 +102,20 @@ HTML_TEMPLATE = r"""
         .card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.3s ease; position: relative; border: 1px solid #edf2f7; }
         .card:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
         
-        /* CSS السلايدر والتمرير */
+        /* CSS السلايدر والتمرير المطور */
         .slider-container { position: relative; width: 100%; height: 210px; overflow: hidden; background: #fff; border-bottom: 1px solid #f1f2f6; }
-        .slider-wrapper { display: flex; width: 100%; height: 100%; overflow-x: auto; scroll-snap-type: x mandatory; scrollbar-width: none; }
+        .slider-wrapper { display: flex; width: 100%; height: 100%; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-behavior: smooth; }
         .slider-wrapper::-webkit-scrollbar { display: none; }
-        .slide-img { min-width: 100%; height: 100%; object-fit: contain; scroll-snap-align: start; padding: 10px; cursor: zoom-in; }
+        .slide-img { min-width: 100%; height: 100%; object-fit: contain; scroll-snap-align: start; padding: 10px; cursor: pointer; flex-shrink: 0; }
         
-        .slider-dots { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 10; background: rgba(255,255,255,0.7); padding: 3px 8px; border-radius: 12px; backdrop-filter: blur(2px); }
+        .slider-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.4); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; z-index: 12; transition: 0.2s; }
+        .slider-btn:hover { background: rgba(0,0,0,0.7); }
+        .slider-btn.prev { left: 5px; }
+        .slider-btn.next { right: 5px; }
+
+        .slider-dots { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 10; background: rgba(255,255,255,0.75); padding: 3px 8px; border-radius: 12px; backdrop-filter: blur(2px); }
         .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; transition: all 0.3s ease; }
-        .dot.active { width: 18px; border-radius: 10px; background: #000; }
+        .dot.active { width: 18px; border-radius: 10px; background: #1e3c72; }
 
         .badge-out { position: absolute; top: 10px; right: 10px; background: #e74c3c; color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.75em; font-weight: bold; z-index: 10; }
         .badge-sale { position: absolute; top: 10px; left: 10px; background: #e67e22; color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.75em; font-weight: bold; z-index: 10; }
@@ -352,11 +357,17 @@ HTML_TEMPLATE = r"""
                             
                             {% set images = p.image_url.split(',') if p.image_url else ['https://via.placeholder.com/250x200?text=No+Image'] %}
                             <div class="slider-container">
+                                {% if images|length > 1 %}
+                                    <button class="slider-btn prev" onclick="scrollSlider(this, -1)">&#10094;</button>
+                                    <button class="slider-btn next" onclick="scrollSlider(this, 1)">&#10095;</button>
+                                {% endif %}
+
                                 <div class="slider-wrapper" onscroll="updateDots(this)">
                                     {% for img in images %}
                                         <img src="{{ img.strip() }}" class="slide-img" alt="{{ p.name }}" onclick="openModal(this.src)">
                                     {% endfor %}
                                 </div>
+
                                 {% if images|length > 1 %}
                                     <div class="slider-dots">
                                         {% for img in images %}
@@ -454,6 +465,15 @@ HTML_TEMPLATE = r"""
         let cart = [];
         const phoneNumber = "{{ phone }}";
 
+        // التنقل بواسطة أزرار الأسهم
+        function scrollSlider(btn, direction) {
+            const container = btn.parentElement;
+            const wrapper = container.querySelector('.slider-wrapper');
+            const slideWidth = wrapper.clientWidth;
+            wrapper.scrollBy({ left: direction * slideWidth, behavior: 'smooth' });
+        }
+
+        // تحديث النقاط الدلالية للصور
         function updateDots(wrapper) {
             const scrollLeft = Math.abs(wrapper.scrollLeft);
             const slideWidth = wrapper.clientWidth;
