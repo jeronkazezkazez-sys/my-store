@@ -17,8 +17,9 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
-# 2️⃣ رقم الواتساب الخاص بك
+# 2️⃣ رقم الواتساب والعملة
 PHONE_NUMBER = "218916092788"
+CURRENCY = "CFA"
 
 # 3️⃣ نماذج جداول قاعدة البيانات
 class Product(db.Model):
@@ -240,7 +241,7 @@ HTML_TEMPLATE = """
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>السعر الحقيقي (XOF):</label>
+                        <label>السعر الحقيقي (CFA):</label>
                         <input type="number" step="0.01" name="price" value="{{ edit_product.price if edit_product else '' }}" placeholder="مثال: 12000" required>
                     </div>
                     <div class="form-group">
@@ -283,7 +284,7 @@ HTML_TEMPLATE = """
                             <tr>
                                 <td><b>{{ p.name }}</b></td>
                                 <td>{{ p.category }}</td>
-                                <td>{{ "{:,.0f}".format(p.price) }} XOF</td>
+                                <td>{{ "{:,.0f}".format(p.price) }} CFA</td>
                                 <td>{{ "{:,.0f}".format(p.old_price) if p.old_price else '-' }}</td>
                                 <td>
                                     {% if p.is_available %}
@@ -334,9 +335,9 @@ HTML_TEMPLATE = """
                                 </div>
                                 <div>
                                     <div class="price-container">
-                                        <span class="card-price">{{ "{:,.0f}".format(p.price) }} XOF</span>
+                                        <span class="card-price">{{ "{:,.0f}".format(p.price) }} CFA</span>
                                         {% if p.old_price and p.old_price > p.price %}
-                                            <span class="card-old-price">{{ "{:,.0f}".format(p.old_price) }} XOF</span>
+                                            <span class="card-old-price">{{ "{:,.0f}".format(p.old_price) }} CFA</span>
                                         {% endif %}
                                     </div>
                                     {% if p.is_available %}
@@ -368,7 +369,7 @@ HTML_TEMPLATE = """
                         <p style="text-align:center; color:#7f8c8d;">السلة فارغة حالياً.</p>
                     </div>
                     <div class="cart-total">
-                        الإجمالي: <span id="cartTotalSum" style="color:#e74c3c;">0</span> XOF
+                        الإجمالي: <span id="cartTotalSum" style="color:#e74c3c;">0</span> CFA
                     </div>
                     <a id="whatsappOrderBtn" href="#" target="_blank" class="send-whatsapp-btn">💬 إرسال الطلب عبر الواتساب</a>
                 </div>
@@ -491,7 +492,7 @@ HTML_TEMPLATE = """
                         <div class="cart-item">
                             <div class="cart-item-info">
                                 <div class="cart-item-title">${item.name} (${item.quantity})</div>
-                                <div class="cart-item-price">${(item.price * item.quantity).toLocaleString()} XOF</div>
+                                <div class="cart-item-price">${(item.price * item.quantity).toLocaleString()} CFA</div>
                             </div>
                             <span class="remove-item" onclick="removeFromCart(${index})">حذف</span>
                         </div>
@@ -502,9 +503,9 @@ HTML_TEMPLATE = """
             let userDevice = detectUserDevice();
             let message = "أهلاً، أود طلب المنتجات التالية من متجر الحلول الذكية:\\n\\n";
             cart.forEach(item => {
-                message += `• ${item.name} (العدد: ${item.quantity}) - ${(item.price * item.quantity).toLocaleString()} XOF\\n`;
+                message += `• ${item.name} (العدد: ${item.quantity}) - ${(item.price * item.quantity).toLocaleString()} CFA\\n`;
             });
-            message += `\\n💵 الإجمالي: ${totalSum.toLocaleString()} XOF`;
+            message += `\\n💵 الإجمالي: ${totalSum.toLocaleString()} CFA`;
             message += `\\n\\n[REF-DEV: ${userDevice}]`;
             
             document.getElementById('whatsappOrderBtn').href = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
