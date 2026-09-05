@@ -1,8 +1,6 @@
 import os
 import csv
 import io
-import base64
-import requests
 from flask import Flask, render_template_string, request, redirect, url_for, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy import text, func
@@ -19,26 +17,8 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
 
-# 2️⃣ رقم الواتساب والعملة ومفتاح ImgBB
+# 2️⃣ رقم الواتساب الخاص بك
 PHONE_NUMBER = "218916092788"
-CURRENCY = "CFA"
-IMGBB_API_KEY = "6d702921b742f8321da19d349e46f00d"
-
-# دالة رفع الصورة إلى ImgBB
-def upload_image_to_imgbb(image_file):
-    try:
-        url = "https://api.imgbb.com/1/upload"
-        payload = {
-            "key": IMGBB_API_KEY,
-            "image": base64.b64encode(image_file.read()).decode('utf-8'),
-        }
-        res = requests.post(url, payload)
-        data = res.json()
-        if data.get("success"):
-            return data["data"]["url"]
-    except Exception as e:
-        print(f"Error uploading image: {e}")
-    return None
 
 # 3️⃣ نماذج جداول قاعدة البيانات
 class Product(db.Model):
@@ -47,7 +27,7 @@ class Product(db.Model):
     price = db.Column(db.Float, nullable=False)
     old_price = db.Column(db.Float, nullable=True)
     category = db.Column(db.String(50), default="تفعيلات وبوكسات")
-    image_url = db.Column(db.Text, nullable=True)  # يستوعب روابط متعددة مفصولة بفاصلة
+    image_url = db.Column(db.String(500), nullable=True)
     is_available = db.Column(db.Boolean, default=True)
 
 class VisitorLog(db.Model):
@@ -66,8 +46,8 @@ with app.app_context():
     except Exception as e:
         db.session.rollback()
 
-# 5️⃣ تصميم الواجهة المطور والمزود بالسلايدر والتمرير المرن
-HTML_TEMPLATE = r"""
+# 5️⃣ تصميم الواجهة المطور والمتناسق
+HTML_TEMPLATE = """
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -92,6 +72,7 @@ HTML_TEMPLATE = r"""
         .header p { color: #7f8c8d; margin: 0; font-size: 1em; }
         .back-link { display: inline-block; margin-top: 15px; padding: 8px 18px; background: #34495e; color: white; text-decoration: none; border-radius: 6px; font-weight: bold; font-size: 0.9em; }
 
+        /* ترتيب لوحة التحكم بجانب بعض لمظهر أكثر تناسقاً */
         .admin-dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-bottom: 25px; }
         
         .category-filter { display: flex; justify-content: center; gap: 10px; margin-bottom: 25px; flex-wrap: wrap; }
@@ -101,24 +82,11 @@ HTML_TEMPLATE = r"""
         .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 20px; }
         .card { background: white; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; transition: all 0.3s ease; position: relative; border: 1px solid #edf2f7; }
         .card:hover { transform: translateY(-4px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+        .card-img-wrapper { position: relative; background: #fff; width: 100%; height: 210px; display: flex; align-items: center; justify-content: center; padding: 10px; border-bottom: 1px solid #f1f2f6; }
+        .card img { max-width: 100%; max-height: 100%; object-fit: contain; cursor: zoom-in; }
         
-        /* CSS السلايدر والتمرير المطور */
-        .slider-container { position: relative; width: 100%; height: 210px; overflow: hidden; background: #fff; border-bottom: 1px solid #f1f2f6; }
-        .slider-wrapper { display: flex; width: 100%; height: 100%; overflow-x: auto; scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch; scrollbar-width: none; scroll-behavior: smooth; }
-        .slider-wrapper::-webkit-scrollbar { display: none; }
-        .slide-img { min-width: 100%; height: 100%; object-fit: contain; scroll-snap-align: start; padding: 10px; cursor: pointer; flex-shrink: 0; }
-        
-        .slider-btn { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(0,0,0,0.4); color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: bold; z-index: 12; transition: 0.2s; }
-        .slider-btn:hover { background: rgba(0,0,0,0.7); }
-        .slider-btn.prev { left: 5px; }
-        .slider-btn.next { right: 5px; }
-
-        .slider-dots { position: absolute; bottom: 8px; left: 50%; transform: translateX(-50%); display: flex; gap: 6px; z-index: 10; background: rgba(255,255,255,0.75); padding: 3px 8px; border-radius: 12px; backdrop-filter: blur(2px); }
-        .dot { width: 8px; height: 8px; border-radius: 50%; background: #ccc; transition: all 0.3s ease; }
-        .dot.active { width: 18px; border-radius: 10px; background: #1e3c72; }
-
-        .badge-out { position: absolute; top: 10px; right: 10px; background: #e74c3c; color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.75em; font-weight: bold; z-index: 10; }
-        .badge-sale { position: absolute; top: 10px; left: 10px; background: #e67e22; color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.75em; font-weight: bold; z-index: 10; }
+        .badge-out { position: absolute; top: 10px; right: 10px; background: #e74c3c; color: white; padding: 4px 10px; border-radius: 6px; font-size: 0.75em; font-weight: bold; }
+        .badge-sale { position: absolute; top: 10px; left: 10px; background: #e67e22; color: white; padding: 4px 8px; border-radius: 6px; font-size: 0.75em; font-weight: bold; }
         
         .card-body { padding: 15px; flex-grow: 1; display: flex; flex-direction: column; justify-content: space-between; }
         .card-category { font-size: 0.75em; color: #95a5a6; font-weight: bold; text-transform: uppercase; margin-bottom: 4px; }
@@ -212,7 +180,9 @@ HTML_TEMPLATE = r"""
                 <div class="alert-danger">{{ err }}</div>
             {% endif %}
 
+            <!-- شبكة تحكم متناسقة ومختصرة للطول -->
             <div class="admin-dashboard-grid">
+                <!-- قسم رفع CSV -->
                 <div class="bulk-container">
                     <h3 style="margin-top:0;">📁 رفع منتجات (CSV)</h3>
                     <p style="color: #7f8c8d; font-size: 0.8em; margin-bottom: 10px;">
@@ -224,6 +194,7 @@ HTML_TEMPLATE = r"""
                     </form>
                 </div>
 
+                <!-- لوحة إحصائيات الأجهزة مع زر مسح السجلات -->
                 <div class="stats-container">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <h3 style="margin: 0;">📊 أجهزة الزوار</h3>
@@ -256,7 +227,7 @@ HTML_TEMPLATE = r"""
 
             <div class="form-container" style="margin-bottom: 25px;">
                 <h2>{% if edit_product %}تعديل بيانات المنتج{% else %}إضافة منتج يدوي فردي{% endif %}</h2>
-                <form action="{% if edit_product %}/admin/edit/{{ edit_product.id }}{% else %}/admin{% endif %}" method="POST" enctype="multipart/form-data">
+                <form action="{% if edit_product %}/admin/edit/{{ edit_product.id }}{% else %}/admin{% endif %}" method="POST">
                     <div class="form-group">
                         <label>اسم المنتج أو الخدمة:</label>
                         <input type="text" name="name" value="{{ edit_product.name if edit_product else '' }}" placeholder="مثال: تفعيل أداة EFT Pro" required>
@@ -269,7 +240,7 @@ HTML_TEMPLATE = r"""
                         </select>
                     </div>
                     <div class="form-group">
-                        <label>السعر الحقيقي (CFA):</label>
+                        <label>السعر الحقيقي (XOF):</label>
                         <input type="number" step="0.01" name="price" value="{{ edit_product.price if edit_product else '' }}" placeholder="مثال: 12000" required>
                     </div>
                     <div class="form-group">
@@ -277,13 +248,8 @@ HTML_TEMPLATE = r"""
                         <input type="number" step="0.01" name="old_price" value="{{ edit_product.old_price if edit_product and edit_product.old_price else '' }}" placeholder="مثال: 15000">
                     </div>
                     <div class="form-group">
-                        <label>🖼️ رفع صور متعددة من الجهاز مباشرة:</label>
-                        <input type="file" name="image_files" accept="image/*" multiple style="background: #f8f9fa; padding: 6px; border: 1px solid #ccc; border-radius: 6px;">
-                        <small style="color:#7f8c8d;">يمكنك تحديد أكثر من صورة في وقت واحد.</small>
-                    </div>
-                    <div class="form-group">
-                        <label>أو ضع روابط صور خارجية (افصل بين الروابط بفاصلة):</label>
-                        <input type="text" name="image_url" value="{{ edit_product.image_url if edit_product else '' }}" placeholder="https://site.com/img1.jpg, https://site.com/img2.jpg">
+                        <label>رابط صورة المنتج (Image URL):</label>
+                        <input type="url" name="image_url" value="{{ edit_product.image_url if edit_product else '' }}" placeholder="https://example.com/image.jpg">
                     </div>
                     <div class="form-group">
                         <label>حالة التوفر في المخزن:</label>
@@ -317,7 +283,7 @@ HTML_TEMPLATE = r"""
                             <tr>
                                 <td><b>{{ p.name }}</b></td>
                                 <td>{{ p.category }}</td>
-                                <td>{{ "{:,.0f}".format(p.price) }} CFA</td>
+                                <td>{{ "{:,.0f}".format(p.price) }} XOF</td>
                                 <td>{{ "{:,.0f}".format(p.old_price) if p.old_price else '-' }}</td>
                                 <td>
                                     {% if p.is_available %}
@@ -355,26 +321,10 @@ HTML_TEMPLATE = r"""
                                 <div class="badge-sale">عرض خاص 🔥</div>
                             {% endif %}
                             
-                            {% set images = p.image_url.split(',') if p.image_url else ['https://via.placeholder.com/250x200?text=No+Image'] %}
-                            <div class="slider-container">
-                                {% if images|length > 1 %}
-                                    <button class="slider-btn prev" onclick="scrollSlider(this, -1)">&#10094;</button>
-                                    <button class="slider-btn next" onclick="scrollSlider(this, 1)">&#10095;</button>
-                                {% endif %}
-
-                                <div class="slider-wrapper" onscroll="updateDots(this)">
-                                    {% for img in images %}
-                                        <img src="{{ img.strip() }}" class="slide-img" alt="{{ p.name }}" onclick="openModal(this.src)">
-                                    {% endfor %}
-                                </div>
-
-                                {% if images|length > 1 %}
-                                    <div class="slider-dots">
-                                        {% for img in images %}
-                                            <div class="dot {% if loop.first %}active{% endif %}"></div>
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
+                            <div class="card-img-wrapper">
+                                <img src="{{ p.image_url if p.image_url else 'https://via.placeholder.com/250x200?text=No+Image' }}" 
+                                     alt="{{ p.name }}" 
+                                     onclick="openModal(this.src)">
                             </div>
 
                             <div class="card-body">
@@ -384,9 +334,9 @@ HTML_TEMPLATE = r"""
                                 </div>
                                 <div>
                                     <div class="price-container">
-                                        <span class="card-price">{{ "{:,.0f}".format(p.price) }} CFA</span>
+                                        <span class="card-price">{{ "{:,.0f}".format(p.price) }} XOF</span>
                                         {% if p.old_price and p.old_price > p.price %}
-                                            <span class="card-old-price">{{ "{:,.0f}".format(p.old_price) }} CFA</span>
+                                            <span class="card-old-price">{{ "{:,.0f}".format(p.old_price) }} XOF</span>
                                         {% endif %}
                                     </div>
                                     {% if p.is_available %}
@@ -418,7 +368,7 @@ HTML_TEMPLATE = r"""
                         <p style="text-align:center; color:#7f8c8d;">السلة فارغة حالياً.</p>
                     </div>
                     <div class="cart-total">
-                        الإجمالي: <span id="cartTotalSum" style="color:#e74c3c;">0</span> CFA
+                        الإجمالي: <span id="cartTotalSum" style="color:#e74c3c;">0</span> XOF
                     </div>
                     <a id="whatsappOrderBtn" href="#" target="_blank" class="send-whatsapp-btn">💬 إرسال الطلب عبر الواتساب</a>
                 </div>
@@ -465,34 +415,11 @@ HTML_TEMPLATE = r"""
         let cart = [];
         const phoneNumber = "{{ phone }}";
 
-        // التنقل بواسطة أزرار الأسهم
-        function scrollSlider(btn, direction) {
-            const container = btn.parentElement;
-            const wrapper = container.querySelector('.slider-wrapper');
-            const slideWidth = wrapper.clientWidth;
-            wrapper.scrollBy({ left: direction * slideWidth, behavior: 'smooth' });
-        }
-
-        // تحديث النقاط الدلالية للصور
-        function updateDots(wrapper) {
-            const scrollLeft = Math.abs(wrapper.scrollLeft);
-            const slideWidth = wrapper.clientWidth;
-            const index = Math.round(scrollLeft / slideWidth);
-            
-            const dots = wrapper.parentElement.querySelectorAll('.dot');
-            dots.forEach((dot, i) => {
-                if(i === index) {
-                    dot.classList.add('active');
-                } else {
-                    dot.classList.remove('active');
-                }
-            });
-        }
-
         function detectUserDevice() {
             const ua = navigator.userAgent;
             if (/Android/i.test(ua)) {
-                return "Android Device";
+                let match = ua.match(/Android[^;]+; ([^;]+)\)/);
+                return match ? match[1] : "Android Device";
             } else if (/iPhone/i.test(ua)) {
                 return "iPhone";
             } else if (/iPad/i.test(ua)) {
@@ -564,7 +491,7 @@ HTML_TEMPLATE = r"""
                         <div class="cart-item">
                             <div class="cart-item-info">
                                 <div class="cart-item-title">${item.name} (${item.quantity})</div>
-                                <div class="cart-item-price">${(item.price * item.quantity).toLocaleString()} CFA</div>
+                                <div class="cart-item-price">${(item.price * item.quantity).toLocaleString()} XOF</div>
                             </div>
                             <span class="remove-item" onclick="removeFromCart(${index})">حذف</span>
                         </div>
@@ -573,12 +500,12 @@ HTML_TEMPLATE = r"""
             }
 
             let userDevice = detectUserDevice();
-            let message = "أهلاً، أود طلب المنتجات التالية من متجر الحلول الذكية:\n\n";
+            let message = "أهلاً، أود طلب المنتجات التالية من متجر الحلول الذكية:\\n\\n";
             cart.forEach(item => {
-                message += `• ${item.name} (العدد: ${item.quantity}) - ${(item.price * item.quantity).toLocaleString()} CFA\n`;
+                message += `• ${item.name} (العدد: ${item.quantity}) - ${(item.price * item.quantity).toLocaleString()} XOF\\n`;
             });
-            message += `\n💵 الإجمالي: ${totalSum.toLocaleString()} CFA`;
-            message += `\n\n[REF-DEV: ${userDevice}]`;
+            message += `\\n💵 الإجمالي: ${totalSum.toLocaleString()} XOF`;
+            message += `\\n\\n[REF-DEV: ${userDevice}]`;
             
             document.getElementById('whatsappOrderBtn').href = `https://wa.me/${phoneNumber}?text=${encodeURIComponent(message)}`;
         }
@@ -687,7 +614,7 @@ def upload_csv():
         db.session.rollback()
         return redirect(url_for('admin', err=f"حدث خطأ أثناء معالجة الملف: {str(e)}"))
 
-# 9️⃣ مسار مسح سجلات أجهزة الزوار
+# 9️⃣ مسار مسح سجلات أجهزة الزوار (إعادة الضبط)
 @app.route('/admin/clear-logs')
 def clear_logs():
     try:
@@ -709,32 +636,16 @@ def admin():
         price = request.form.get('price')
         old_price = request.form.get('old_price')
         category = request.form.get('category')
-        image_url_input = request.form.get('image_url')
+        image_url = request.form.get('image_url')
         is_available = request.form.get('is_available') == '1'
         
-        uploaded_urls = []
-        image_files = request.files.getlist('image_files')
-        for f in image_files:
-            if f and f.filename != '':
-                url = upload_image_to_imgbb(f)
-                if url:
-                    uploaded_urls.append(url)
-                    
-        final_image_urls = []
-        if uploaded_urls:
-            final_image_urls.extend(uploaded_urls)
-        if image_url_input:
-            final_image_urls.extend([u.strip() for u in image_url_input.split(',') if u.strip()])
-
-        final_image_string = ",".join(final_image_urls) if final_image_urls else None
-
         if name and price:
             new_prod = Product(
                 name=name, 
                 price=float(price), 
                 old_price=float(old_price) if old_price else None,
                 category=category,
-                image_url=final_image_string, 
+                image_url=image_url, 
                 is_available=is_available
             )
             db.session.add(new_prod)
@@ -768,25 +679,7 @@ def edit_product(product_id):
         old_price = request.form.get('old_price')
         product.old_price = float(old_price) if old_price else None
         product.category = request.form.get('category')
-        
-        uploaded_urls = []
-        image_files = request.files.getlist('image_files')
-        for f in image_files:
-            if f and f.filename != '':
-                url = upload_image_to_imgbb(f)
-                if url:
-                    uploaded_urls.append(url)
-
-        image_url_input = request.form.get('image_url')
-        final_image_urls = []
-        if uploaded_urls:
-            final_image_urls.extend(uploaded_urls)
-        if image_url_input:
-            final_image_urls.extend([u.strip() for u in image_url_input.split(',') if u.strip()])
-
-        if final_image_urls:
-            product.image_url = ",".join(final_image_urls)
-
+        product.image_url = request.form.get('image_url')
         product.is_available = request.form.get('is_available') == '1'
         db.session.commit()
         return redirect(url_for('admin', msg="تم تعديل المنتج بنجاح!"))
